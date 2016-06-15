@@ -14,7 +14,7 @@ define('APP_DEBUG', true);
 
 // website root url
 //define('APP_URL', 'http://localhost/charlotte');
-define('APP_URL', 'http://rezserver.ppn.dockerhost/private/charlotte');
+define('APP_URL', 'http://rezserver.ppn.dockerhost/private/charlotte/charlotte');
 
 
 // load framework
