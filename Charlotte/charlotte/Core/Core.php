@@ -43,13 +43,20 @@ class Core
         $queryString  = empty($queryString) ? array() : $queryString;
         // init controller
         $controller = $controllerName . 'Controller';
-        $dispatch = new $controller($controllerName, $action);
-        // if controller and action exist, call and run
-        if ((int)method_exists($controller, $action)) {
-            call_user_func_array(array($dispatch, $action), $queryString);
-        } else {
-            exit($controller . "function ". $action . " does not exist in controller " . $controller);
+        
+        try{
+            $dispatch = new $controller($controllerName, $action);
+                    // if controller and action exist, call and run
+            if ((int)method_exists($controller, $action)) {
+                call_user_func_array(array($dispatch, $action), $queryString);
+            } else {
+                exit($controller . "function ". $action . " does not exist in controller " . $controller);
+            }
         }
+        catch(Exception $error) {
+            exit($error->getMessage());
+        }
+    
     }
     // check dev env
     function setReporting()
