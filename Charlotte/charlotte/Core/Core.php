@@ -5,7 +5,10 @@
  * Date: 6/14/2016
  * Time: 11:59 AM
  */
-class Charlotte
+
+namespace Charlotte\Core;
+
+class Core
 {
     // run the code
     function run()
@@ -103,22 +106,22 @@ class Charlotte
         $models_interface = APP_PATH . 'app/models/' . $class . INFC;
         if (file_exists($frameworks)) {
             // load core class
-            include $frameworks;
+            include_once $frameworks;
         } elseif (file_exists($frameworks_interface)) {
             // load core class
-            include $frameworks_interface;
+            include_once $frameworks_interface;
         } elseif (file_exists($controllers)) {
             // load controllers
-            include $controllers;
+            include_once $controllers;
         } elseif (file_exists($controllers_interface)) {
             // load controllers
-            include $controllers_interface;
+            include_once $controllers_interface;
         } elseif (file_exists($models)) {
             //load models
             include $models;
         }  elseif (file_exists($models_interface)) {
             //load models
-            include $models_interface;
+            include_once $models_interface;
         }else {
             /* error */
         }
