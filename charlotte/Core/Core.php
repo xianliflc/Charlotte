@@ -105,32 +105,36 @@ class Core
     static function loadClass($class)
     {
         $class = preg_replace("/\\\\/", "/", $class);
-        $frameworks = FRAME_PATH . $class . EXT;
-        $frameworks_interface = FRAME_PATH . $class . INFC;
+        $frameworks = FRAME_PATH . preg_replace("/^Charlotte\//", "", $class) . EXT;
+        $frameworks_interface = FRAME_PATH . preg_replace("/^Charlotte\//", "", $class) . INFC;
         $controllers = APP_PATH . 'app/controllers/' . $class . EXT;
         $controllers_interface = APP_PATH . 'app/controllers/' . $class . INFC;
         $models = APP_PATH . 'app/models/' . $class . EXT;
         $models_interface = APP_PATH . 'app/models/' . $class . INFC;
+        var_dump($class);
+        var_dump($frameworks);
+        var_dump($frameworks_interface);
         if (file_exists($frameworks)) {
             // load core class
             include_once $frameworks;
         } elseif (file_exists($frameworks_interface)) {
-            // load core class
+            // load core interfaces
             include_once $frameworks_interface;
         } elseif (file_exists($controllers)) {
             // load controllers
             include_once $controllers;
         } elseif (file_exists($controllers_interface)) {
-            // load controllers
+            // load controllers interfaces
             include_once $controllers_interface;
         } elseif (file_exists($models)) {
             //load models
             include $models;
         }  elseif (file_exists($models_interface)) {
-            //load models
+            //load models interfaces
             include_once $models_interface;
         }else {
             /* error */
+            exit($class . " does not exist. Please check again");
         }
     }
 }
