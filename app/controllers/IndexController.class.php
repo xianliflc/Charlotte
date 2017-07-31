@@ -9,9 +9,8 @@ use Charlotte\Exception\CException;
 
 class IndexController extends Controller
 {
-    function index()
-    {
-        $cc = new CException();
+    function index(){
+
         $this->assign('title', 'homepage');
         $this->assign('todo', 'welcome to charlotte!');
     }

@@ -111,9 +111,7 @@ class Core
         $controllers_interface = APP_PATH . 'app/controllers/' . $class . INFC;
         $models = APP_PATH . 'app/models/' . $class . EXT;
         $models_interface = APP_PATH . 'app/models/' . $class . INFC;
-        var_dump($class);
-        var_dump($frameworks);
-        var_dump($frameworks_interface);
+
         if (file_exists($frameworks)) {
             // load core class
             include_once $frameworks;
