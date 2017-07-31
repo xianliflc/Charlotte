@@ -5,7 +5,10 @@
  * Date: 6/14/2016
  * Time: 11:59 AM
  */
-class Charlotte
+
+namespace Charlotte\Core;
+
+class Core
 {
     // run the code
     function run()
@@ -40,13 +43,20 @@ class Charlotte
         $queryString  = empty($queryString) ? array() : $queryString;
         // init controller
         $controller = $controllerName . 'Controller';
-        $dispatch = new $controller($controllerName, $action);
-        // if controller and action exist, call and run
-        if ((int)method_exists($controller, $action)) {
-            call_user_func_array(array($dispatch, $action), $queryString);
-        } else {
-            exit($controller . "function ". $action . " does not exist in controller " . $controller);
+        
+        try{
+            $dispatch = new $controller($controllerName, $action);
+                    // if controller and action exist, call and run
+            if ((int)method_exists($controller, $action)) {
+                call_user_func_array(array($dispatch, $action), $queryString);
+            } else {
+                exit($controller . "function ". $action . " does not exist in controller " . $controller);
+            }
         }
+        catch(Exception $error) {
+            exit($error->getMessage());
+        }
+    
     }
     // check dev env
     function setReporting()
@@ -95,32 +105,34 @@ class Charlotte
     static function loadClass($class)
     {
         $class = preg_replace("/\\\\/", "/", $class);
-        $frameworks = FRAME_PATH . $class . EXT;
-        $frameworks_interface = FRAME_PATH . $class . INFC;
+        $frameworks = FRAME_PATH . preg_replace("/^Charlotte\//", "", $class) . EXT;
+        $frameworks_interface = FRAME_PATH . preg_replace("/^Charlotte\//", "", $class) . INFC;
         $controllers = APP_PATH . 'app/controllers/' . $class . EXT;
         $controllers_interface = APP_PATH . 'app/controllers/' . $class . INFC;
         $models = APP_PATH . 'app/models/' . $class . EXT;
         $models_interface = APP_PATH . 'app/models/' . $class . INFC;
+
         if (file_exists($frameworks)) {
             // load core class
-            include $frameworks;
+            include_once $frameworks;
         } elseif (file_exists($frameworks_interface)) {
-            // load core class
-            include $frameworks_interface;
+            // load core interfaces
+            include_once $frameworks_interface;
         } elseif (file_exists($controllers)) {
             // load controllers
-            include $controllers;
+            include_once $controllers;
         } elseif (file_exists($controllers_interface)) {
-            // load controllers
-            include $controllers_interface;
+            // load controllers interfaces
+            include_once $controllers_interface;
         } elseif (file_exists($models)) {
             //load models
             include $models;
         }  elseif (file_exists($models_interface)) {
-            //load models
-            include $models_interface;
+            //load models interfaces
+            include_once $models_interface;
         }else {
             /* error */
+            exit($class . " does not exist. Please check again");
         }
     }
 }

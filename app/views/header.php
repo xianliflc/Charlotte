@@ -50,10 +50,4 @@
 <body>
 <h1><?php echo $title ?></h1>
 <?php
-/**
- * Created by PhpStorm.
- * User: xiali
- * Date: 6/14/2016
- * Time: 12:42 PM
- */
 
