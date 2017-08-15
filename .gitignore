@@ -1,2 +1,8 @@
 /.git/
 /.DS_Store
+/app/
+.idea/
+Charlotte/.DS_Store
+
+/index.php
+/main.php
