@@ -6,8 +6,8 @@
  * Time: 11:49 AM
  */
 
-// Current path is default
-define('APP_PATH', __DIR__.'/');
+
+include_once 'main.php';
 
 // load framework
-require './charlotte/charlotte.php';
+require './Charlotte/Charlotte.php';

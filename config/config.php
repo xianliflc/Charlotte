@@ -4,13 +4,12 @@
  * User: xiali
  */
 
-/** settings **/
-define('DB_NAME', 'todo');
-define('DB_USER', 'root');
-define('DB_PASSWORD', '');
-define('DB_HOST', 'localhost');
-// debug mode
-define('APP_DEBUG', true);
+defined('DB_HOST') or define('DB_HOST', '127.0.0.1');
+defined('DB_USER') or define('DB_USER', 'api');
+defined('DB_PASSWORD') or define('DB_PASSWORD','apiapi');
+defined('DB_NAME') or define('DB_NAME', 'demo');
+defined('DB_PORT') or define('DB_PORT', '3306');
 
-// website root url
-define('APP_URL', 'http://applayer.ppn.dockerhost/Charlotte/charlotte');
+
+
+
