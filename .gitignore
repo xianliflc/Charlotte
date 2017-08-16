@@ -3,3 +3,6 @@
 .idea/
 Charlotte/.DS_Store
 
+/config/
+/index.php
+/main.php
