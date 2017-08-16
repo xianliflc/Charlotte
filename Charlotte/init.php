@@ -41,7 +41,6 @@ function loadClass($class)
                 include_once $path;
             }
         }
-
         if ( $flag === false) {
             exit($class . " does not exist. Please check again");
         }
