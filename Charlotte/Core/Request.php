@@ -13,13 +13,18 @@ class Request
 {
     private $get;
     private $post;
+    private $cookies;
+    private $others;
 
-    public function __construct($get = array(), $post = array())
+    public function __construct($get = array(), $post = array(), $cookies = array(), $others = array())
     {
         $this->get = $get;
         $this->post = $post;
+        $this->cookies = $cookies;
+        $this->others = $others;
     }
 
+    // set function now only available to get and post params
     public function set($key, $value, $property = 'get') {
         if ($property === 'get' || $property === 'post') {
             $this->{$property}[$key] = $value;
@@ -36,14 +41,14 @@ class Request
     }
 
     public function has($key, $property = 'get') {
-        if ($property === 'get' || $property === 'post') {
+        if ($property === 'get' || $property === 'post' || $property === 'cookeis' || $property === 'others') {
             return isset($this->{$property}[$key]);
         }
         return false;
     }
 
     public function getAll ($property){
-        if($property === 'get' || $property === 'post' ) {
+        if ($property === 'get' || $property === 'post' || $property === 'cookeis' || $property === 'others' ) {
             return $this->{$property};
         }
         else {

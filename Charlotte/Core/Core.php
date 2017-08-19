@@ -19,6 +19,8 @@ class Core
     private $routes;
     private $request;
 
+    const $version = '0.0.3 - alpha';
+
     private function __construct()
     {
         $this->getConfigs();
@@ -99,13 +101,10 @@ class Core
             } else {
                 $pispatch = new Controller($request);
             }
-            
-
         }
         catch(\Exception $error) {
             exit($error->getMessage());
         }
-
     }
 
     // delete invalid chars
@@ -123,13 +122,13 @@ class Core
     // remove globals
     function unregisterGlobals()
     {
-        $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true));
+        $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true), $_COOKIE, $_SERVER);
 
         if (ini_get('register_globals')) {
             $array = array('_SESSION', '_POST', '_GET', '_COOKIE', '_REQUEST', '_SERVER', '_ENV', '_FILES');
-            foreach ($array as $value) {
-                unset($GLOBALS[$value]);
-            }
+//            foreach ($array as $value) {
+//                unset($GLOBALS[$value]);
+//            }
         }
     }
 

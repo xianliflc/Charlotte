@@ -19,7 +19,7 @@ defined('DEFAULT_CONTROLLER') or define('DEFAULT_CONTROLLER', 'Application');
 
 defined('DB_HOST') or define('DB_HOST', '127.0.0.1');
 defined('DB_USER') or define('DB_USER', 'test');
-defined('DB_PASSWORD') or define('DB_PASSWORD','test');
+defined('DB_PASSWORD') or define('DB_PASSWORD', 'test');
 defined('DB_NAME') or define('DB_NAME', 'test');
 defined('DB_PORT') or define('DB_PORT', '3306');
 
