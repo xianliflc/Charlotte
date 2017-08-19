@@ -19,7 +19,7 @@ class Core
     private $routes;
     private $request;
 
-    const $version = '0.0.3 - alpha';
+    const version = '0.0.3 - alpha';
 
     private function __construct()
     {
