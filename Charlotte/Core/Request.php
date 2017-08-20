@@ -31,12 +31,12 @@ class Request
         }
     }
 
-    public function get($key, $property = 'get') {
+    public function get($key, $property = 'get', $default = false) {
         if( $this->has($key, $property)) {
             return $this->has($key, $property);
         }
         else {
-            return false;
+            return $default;
         }
     }
 

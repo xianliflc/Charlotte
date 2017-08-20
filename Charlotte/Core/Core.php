@@ -25,7 +25,7 @@ class Core
     {
         $this->getConfigs();
         $this->routes = routes();
-        $this->request = new Request(array() , array());
+        $this->request = new Request(array(), array(), array(), array() );
     }
 
     public static function getInstance() {
