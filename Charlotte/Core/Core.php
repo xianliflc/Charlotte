@@ -19,11 +19,13 @@ class Core
     private $routes;
     private $request;
 
+    const version = '0.0.3 - alpha';
+
     private function __construct()
     {
         $this->getConfigs();
         $this->routes = routes();
-        $this->request = new Request(array() , array());
+        $this->request = new Request(array(), array(), array(), array() );
     }
 
     public static function getInstance() {
@@ -31,14 +33,11 @@ class Core
         if (self::$instance === null) {
             self::$instance = new Core();
         }
-
         return self::$instance;
     }
 
     function run()
     {
-
-
         $this->setReporting();
         $this->removeMagicQuotes();
         $this->unregisterGlobals();
@@ -97,15 +96,16 @@ class Core
                 'action'    => $action,
                 'request'    => $this->request
             );
-            $pispatch = new $controller($request);
-
+            if ( class_exists ( $controller ) === true) {
+                $pispatch = new $controller($request);
+            } else {
+                $pispatch = new Controller($request);
+            }
         }
         catch(\Exception $error) {
             exit($error->getMessage());
         }
-
     }
-
 
     // delete invalid chars
     function removeMagicQuotes()
@@ -118,19 +118,18 @@ class Core
             $_SESSION = stripSlashesDeep($_SESSION);
         }
     }
+
     // remove globals
     function unregisterGlobals()
     {
-
-        $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true));
+        $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true), $_COOKIE, $_SERVER);
 
         if (ini_get('register_globals')) {
             $array = array('_SESSION', '_POST', '_GET', '_COOKIE', '_REQUEST', '_SERVER', '_ENV', '_FILES');
-            foreach ($array as $value) {
-                unset($GLOBALS[$value]);
-            }
+//            foreach ($array as $value) {
+//                unset($GLOBALS[$value]);
+//            }
         }
-
     }
 
     // delete invalid chars
@@ -139,8 +138,6 @@ class Core
         $value = is_array($value) ? array_map('stripSlashesDeep', $value) : stripslashes($value);
         return $value;
     }
-
-
 
     /**
      * check dev env

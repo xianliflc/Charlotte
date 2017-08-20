@@ -15,11 +15,11 @@ class Logger
     static protected $filename;
     protected $file;
 
-    static public function setFileName($filename)
+    public static function setFileName($filename)
     {
         self::$filename = $filename;
     }
-    static public function getFileName()
+    public static function getFileName()
     {
         if (self::$filename == null)
         {
@@ -27,18 +27,18 @@ class Logger
         }
         return self::$filename;
     }
-    static public function enableIf($condition = true)
+    public static function enableIf($condition = true)
     {
         if ((bool) $condition)
         {
             self::$enabled = true;
         }
     }
-    static public function disable()
+    public static function disable()
     {
         self::$enabled = false;
     }
-    static protected function getInstance()
+    protected static function getInstance()
     {
         if (!self::hasInstance())
         {
@@ -46,11 +46,11 @@ class Logger
         }
         return self::$instance;
     }
-    static protected function hasInstance()
+    protected static function hasInstance()
     {
         return self::$instance instanceof self;
     }
-    static public function writeIfEnabled($message, $level = self::DEBUG)
+    public static function writeIfEnabled($message, $level = self::DEBUG)
     {
         if (self::$enabled)
         {
@@ -64,11 +64,11 @@ class Logger
             self::writeIf($condition, $message, $level);
         }
     }
-    static public function writeLog($message, $level = self::DEBUG)
+    public static function writeLog($message, $level = self::DEBUG)
     {
         self::getInstance()->writeLine($message, $level);
     }
-    static public function writeIf($condition, $message, $level = self::DEBUG)
+    public static function writeIf($condition, $message, $level = self::DEBUG)
     {
         if ($condition){
             self::writeLog($message, $level);

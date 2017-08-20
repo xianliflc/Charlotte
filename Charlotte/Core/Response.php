@@ -21,7 +21,19 @@ class Response
     }
 
     public function setHeader($header = 'json') {
-        header('Content-Type: application/json');
+        switch ($header) {
+            case 'json':
+                header('Content-Type: application/json');
+                break;
+            case 'html':
+                header('Content-Type: text/html');
+                break;
+            case 'xml':
+                header('Content-Type: text/html');
+                break;
+            default:
+                header('Content-Type: application/json');
+        }
     }
 
     public function buildResponse () {
