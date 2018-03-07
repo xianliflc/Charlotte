@@ -14,9 +14,9 @@ class Response
 
     public function __construct($data)
     {
-        $this->data = $data;
-        //$this->options = $options;
+        $this->data = is_null($data) ? array('error' => true, 'message' => 'null response') : $data;
         $this->response = array();
+        $this->dataType = gettype($this->data);
 
     }
 
@@ -62,7 +62,7 @@ class Response
     }
 
     public function get($key) {
-        return $this->data->{$key};
+        return $this->data[$key];
     }
 
 }

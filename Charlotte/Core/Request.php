@@ -15,16 +15,19 @@ class Request
     private $post;
     private $cookies;
     private $others;
+    private $server;
+    private $env;
 
-    public function __construct($get = array(), $post = array(), $cookies = array(), $others = array())
+    public function __construct($get = array(), $post = array(), $cookies = array(), $server = array(), $env = array(), $others = array())
     {
         $this->get = $get;
         $this->post = $post;
         $this->cookies = $cookies;
+        $this->server = $server;
+        $this->env = $env;
         $this->others = $others;
     }
 
-    // set function now only available to get and post params
     public function set($key, $value, $property = 'get') {
         if ($property === 'get' || $property === 'post') {
             $this->{$property}[$key] = $value;
@@ -33,7 +36,7 @@ class Request
 
     public function get($key, $property = 'get', $default = false) {
         if( $this->has($key, $property)) {
-            return $this->has($key, $property);
+            return $this->{$property}[$key];
         }
         else {
             return $default;
@@ -41,14 +44,14 @@ class Request
     }
 
     public function has($key, $property = 'get') {
-        if ($property === 'get' || $property === 'post' || $property === 'cookeis' || $property === 'others') {
+        if (in_array($property, ['get', 'post', 'cookies', 'env', 'others', 'server'])) {
             return isset($this->{$property}[$key]);
         }
         return false;
     }
 
     public function getAll ($property){
-        if ($property === 'get' || $property === 'post' || $property === 'cookeis' || $property === 'others' ) {
+        if (in_array($property, ['get', 'post', 'cookies', 'env', 'others', 'server']) ) {
             return $this->{$property};
         }
         else {
