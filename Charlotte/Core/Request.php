@@ -59,4 +59,13 @@ class Request
         }
     }
 
+    /**
+     * Check the method of the current request
+     * @param string $method
+     * @return bool
+     */
+    public function isMethod ($method = '') {
+        return $method === $this->get('REQUEST_METHOD','server');
+    }
+
 }

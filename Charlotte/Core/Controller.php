@@ -25,11 +25,21 @@ class Controller
             $this->set($key, $dependency);
         }
         // $this->request = $request['request'];
+        if (!isset($dependencies['route']['ignore_validation']) ||
+            (isset($dependencies['route']['ignore_validation']) && $dependencies['route']['ignore_validation'] !== true)
+        ) {
+            $validation = $this->validate();
+            if ($validation === false) {
 
-        $this->validate();
+            }
+        }
+
         return $this->run();
     }
 
+    /**
+     * @throws \Exception
+     */
     protected function validate() {
         throw new \Exception('validation has to be implemented in each controller', 400);
     }
@@ -50,6 +60,9 @@ class Controller
         return $this->get('request')['request'];
     }
 
+    /**
+     * Main entry
+     */
     public function run() {
 
         if (isset($this->action )) {
