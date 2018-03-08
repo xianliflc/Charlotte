@@ -25,12 +25,13 @@ class Controller
             $this->set($key, $dependency);
         }
         // $this->request = $request['request'];
+
         $this->validate();
         return $this->run();
     }
 
     protected function validate() {
-        throw new \Exception(400,'validation has to be implemented in each controller');
+        throw new \Exception('validation has to be implemented in each controller', 400);
     }
 
     protected function set($key, $value) {

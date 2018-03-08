@@ -89,9 +89,10 @@ class Core
         $controller_prefix = 'app\\Controllers\\';
         $package = '';
         $found_controller = false;
+        $route_info = array();
 
         if (!is_null($pathName)) {
-            foreach ($this->routes as $route){
+            foreach ($this->routes as $name => $route){
 
                 if ($route['path'] === $pathName) {
                     $request_method = strtolower($this->request->get('REQUEST_METHOD','server'));
@@ -104,6 +105,8 @@ class Core
                     $action = isset($route['action']) && !empty($route['action'])? $route['action'] : 'index';
                     $package = $route['package']. '\\';
                     $found_controller = true;
+                    $route_info = $route;
+                    $route_info['name'] = $name;
                     break;
                 }
             }
@@ -117,24 +120,19 @@ class Core
 
         $controller = $controller_prefix . $package . $controllerName . 'Controller';
 
-        try{
-            $request = array(
-                'action'    => $action,
-                'request'    => $this->request
-            );
+        $request = array(
+            'action'    => $action,
+            'request'    => $this->request
+        );
 
-            $dependencies = array(
-                'config' => $this->config
-            );
-
-            if ( class_exists ( $controller ) === true) {
-                $pispatch = new $controller($request, $dependencies);
-            } else {
-                $pispatch = new Controller($request, $dependencies);
-            }
-        }
-        catch(\Exception $error) {
-            exit($error->getMessage());
+        $dependencies = array(
+            'config' => $this->config,
+            'route' => $route_info
+        );
+        if ( class_exists ( $controller ) === true) {
+            $dispatch = new $controller($request, $dependencies);
+        } else {
+            $dispatch = new Controller($request, $dependencies);
         }
     }
 

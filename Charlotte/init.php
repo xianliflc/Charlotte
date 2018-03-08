@@ -6,6 +6,10 @@
  * Time: 11:08 AM
  */
 
+/**
+ * Autoload all needed classes
+ * @param $class
+ */
 function loadClass($class)
 {
     $trusted_dirs = getTrustedDirs();
@@ -42,7 +46,9 @@ function loadClass($class)
             }
         }
         if ( $flag === false) {
-            exit($class . " does not exist. Please check again");
+            // $class . " does not exist. Please check again"
+            $response = new \Charlotte\Core\Response(array('error'=>true, 'message'=>"Resource Not Found"), 404);
+            $response->process();
         }
     }
 }
