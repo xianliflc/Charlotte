@@ -12,27 +12,30 @@ namespace Charlotte\Core;
 class Response
 {
 
-    public function __construct($data)
+    public function __construct($data, $code = 200, $type = 'json')
     {
-        $this->data = is_null($data) ? array('error' => true, 'message' => 'null response') : $data;
+        $this->data = is_null($data) ?
+            array('error' => true, 'message' => 'null response') :
+            $data;
+        $this->code = $code;
         $this->response = array();
         $this->dataType = gettype($this->data);
 
     }
 
-    public function setHeader($header = 'json') {
+    public function setHeader($header = 'json', $code = 200) {
         switch ($header) {
             case 'json':
-                header('Content-Type: application/json');
+                header('Content-Type: application/json', true, $code);
                 break;
             case 'html':
-                header('Content-Type: text/html');
+                header('Content-Type: text/html', true, $code);
                 break;
             case 'xml':
-                header('Content-Type: text/html');
+                header('Content-Type: text/html', true, $code);
                 break;
             default:
-                header('Content-Type: application/json');
+                header('Content-Type: application/json', true, $code);
         }
     }
 
@@ -46,15 +49,15 @@ class Response
         }
     }
 
+    /**
+     * Send the response back to client and terminate the app
+     */
     public function process () {
-//        if (isset($this->options['type']) && ($this->options['type'] === 'json' || $this->options['type'] === 'xml')) {
-//            $this->setHeader($this->options['type']);
-//        }
-//        else {
-            $this->setHeader();
-//        }
+
+        $this->setHeader($this->dataType, $this->code);
         $this->response = $this->buildResponse();
         echo json_encode($this->response);
+        exit(0);
     }
 
     public function hasError() {

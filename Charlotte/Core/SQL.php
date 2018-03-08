@@ -22,7 +22,7 @@ class SQL
             $dsn = sprintf("mysql:host=%s;dbname=%s;port=%s", $host, $dbname, $port);
             $this->_dbHandle = new \PDO($dsn, $user, $pass, array(\PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC));
         } catch (\PDOException $e) {
-            exit('ERROR: ' . $e->getMessage());
+            throw $e;
         }
     }
 

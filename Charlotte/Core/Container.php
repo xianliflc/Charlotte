@@ -16,13 +16,24 @@ class Container extends SQL
     const version = 'V2';
     protected $_table;
 
-    function __construct($table)
+    function __construct($config, $table)
     {
         if (isset($table)) {
             $this->_table = $table;
         }
+        $this->config = $config;
+
+        if (!isset($this->config['db'])) {
+            throw new \Exception('No config found for database connection', 500);
+        }
+        $db = $this->config['db'];
+
+        if (!isset($db['host']) || !isset($db['user']) || !isset( $db['password']) || !isset( $db['default_db'])) {
+            throw new \Exception('Invalid config for database connection, please check config', 500);
+        }
+
         // connect to db
-        $this->connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT);
+        $this->connect($db['host'], $db['user'], $db['password'], $db['default_db'], isset($db['port'])? $db['port'] : '3306');
 
     }
 
@@ -38,10 +49,12 @@ class Container extends SQL
     }
 
     protected function buildQuery($params) {
+        //TODO: more logic
         return false;
     }
 
     protected function run($params) {
+        //TODO: more logic
         return false;
     }
 

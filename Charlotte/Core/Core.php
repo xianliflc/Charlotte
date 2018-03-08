@@ -20,7 +20,7 @@ class Core
     private $config;
     private $request;
 
-    const version = '0.0.3 - alpha';
+    const version = '0.0.4 - alpha';
 
     private function __construct()
     {
@@ -46,6 +46,7 @@ class Core
     {
         $this->setReporting();
         $this->removeMagicQuotes();
+        $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true), $_COOKIE, $_SERVER, $_ENV);
         $this->unregisterGlobals();
         $this->Route();
     }
@@ -93,6 +94,12 @@ class Core
             foreach ($this->routes as $route){
 
                 if ($route['path'] === $pathName) {
+                    $request_method = strtolower($this->request->get('REQUEST_METHOD','server'));
+                    $allowed_methods = array_map('strtolower', $route['methods']);
+
+                    if (!in_array($request_method, $allowed_methods)) {
+                        throw new \Exception('method not allowed', 405);
+                    }
                     $controllerName = $route['controller'];
                     $action = isset($route['action']) && !empty($route['action'])? $route['action'] : 'index';
                     $package = $route['package']. '\\';
@@ -146,7 +153,6 @@ class Core
     // remove globals
     function unregisterGlobals()
     {
-        $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true), $_COOKIE, $_SERVER, $_ENV);
         if (array_key_exists('unregister_globals', $this->config['environment']) && $this->config['environment']['unregister_globals'] === true) {
             $array = array('_SESSION', '_POST', '_GET', '_COOKIE', '_REQUEST', '_SERVER', '_ENV', '_FILES');
             foreach ($array as $value) {
