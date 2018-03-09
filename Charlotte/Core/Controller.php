@@ -28,10 +28,7 @@ class Controller
         if (!isset($dependencies['route']['ignore_validation']) ||
             (isset($dependencies['route']['ignore_validation']) && $dependencies['route']['ignore_validation'] !== true)
         ) {
-            $validation = $this->validate();
-            if ($validation === false) {
-
-            }
+            $this->validate();
         }
 
         return $this->run();

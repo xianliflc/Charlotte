@@ -41,10 +41,8 @@ class Controller extends BaseController {
                 (isset($value['func']) && !$value['func']($params[$key]))) {
                 $response = new Response($this->errorResponse('BadRequest', 'Invalid Input'), 400);
                 $response->process();
-                return false;
             }
         }
-        return true;
     }
 
 }
