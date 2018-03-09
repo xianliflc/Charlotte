@@ -1,10 +1,10 @@
 <?php
 
-namespace Charlotte\ApiComponents;
+namespace Charlotte\FrontendComponents;
 
-use Charlotte\Core\Controller as BaseController;
+use Charlotte\ApiComponents\Controller as BaseController;
 
-class Controller extends BaseController {
+class Controller extends BaseController{
 
 
 }

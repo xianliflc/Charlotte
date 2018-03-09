@@ -14,16 +14,31 @@ use Charlotte\Core\ErrorMessage;
 class Controller
 {
 
-    public function __construct($request)
-    {
-        $this->set('request', $request);
+    protected $request;
+    private $action;
 
-        $this->validate();
+    public function __construct($request, $dependencies)
+    {
+        $this->set('action', $request['action']);
+        $this->set('request', $request['request']);
+        foreach($dependencies as $key => $dependency) {
+            $this->set($key, $dependency);
+        }
+        // $this->request = $request['request'];
+        if (!isset($dependencies['route']['ignore_validation']) ||
+            (isset($dependencies['route']['ignore_validation']) && $dependencies['route']['ignore_validation'] !== true)
+        ) {
+            $this->validate();
+        }
+
         return $this->run();
     }
 
+    /**
+     * @throws \Exception
+     */
     protected function validate() {
-
+        throw new \Exception('validation has to be implemented in each controller', 400);
     }
 
     protected function set($key, $value) {
@@ -42,10 +57,13 @@ class Controller
         return $this->get('request')['request'];
     }
 
+    /**
+     * Main entry
+     */
     public function run() {
 
-        if (isset($this->get('request')['action']) ) {
-            $action =  $this->get('request')['action'];
+        if (isset($this->action )) {
+            $action =  $this->get('action');
 
             if ((int)method_exists($this, $action . 'Action')) {
                 $response = new Response($this->{$action . 'Action'}());

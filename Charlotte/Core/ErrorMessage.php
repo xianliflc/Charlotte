@@ -36,6 +36,15 @@ class ErrorMessage
         );
     }
 
+    public static function BadRequest ($message) {
+
+        return array (
+            'Error'         => true,
+            'ErrorMessage'  => $message? $message : 'Bad request or invalid input'
+        );
+    }
+
+
     public static function GeneralError ($message) {
 
         return array (
@@ -44,12 +53,4 @@ class ErrorMessage
         );
     }
 
-
-//    public static function InvalidInput ($message) {
-//
-//        return array (
-//            'Error'         => true,
-//            'ErrorMessage'  =>  $message . ' Not Found.'
-//        );
-//    }
 }

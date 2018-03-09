@@ -17,17 +17,20 @@ class Core
     private static $instance = null;
 
     private $routes;
+    private $config;
     private $request;
 
-    const version = '0.0.3 - alpha';
+    const version = '0.0.4 - alpha';
 
     private function __construct()
     {
         $this->getConfigs();
-        $this->routes = routes();
-        $this->request = new Request(array(), array(), array(), array() );
     }
 
+    /**
+     * return the unique instance of Core
+     * @return Core|null
+     */
     public static function getInstance() {
 
         if (self::$instance === null) {
@@ -36,27 +39,42 @@ class Core
         return self::$instance;
     }
 
+    /**
+     * Main process
+     */
     function run()
     {
         $this->setReporting();
         $this->removeMagicQuotes();
+        $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true), $_COOKIE, $_SERVER, $_ENV);
         $this->unregisterGlobals();
         $this->Route();
     }
 
+    /**
+     * Load config files
+     * @throws \Exception
+     */
     public function getConfigs() {
-        include_once ROUTES;
+        try {
+            $this->routes = json_decode(file_get_contents(ROUTES), true);
+            $this->config = json_decode(file_get_contents(CONFIG), true);
+        } catch (\Exception $e) {
+            // TODO: more logic before throwing out the exception
+            throw $e;
+        }
     }
 
+    /**
+     * Dispatch the request to its corresponding controller
+     */
     public function Route()
     {
 
         $controllerName = 'Application';
         $action = 'index';
-        if (!empty($_GET['url'])) {
-            $url = $_GET['url'];
-            $urlArray = explode('/', $url);
-            $pathName = $urlArray[0];
+        if ($this->request->get('url')) {
+            $pathName = $this->request->get('url');
             if ( is_null($pathName) ) {
                 exit('Wrong Route');
             }
@@ -71,13 +89,24 @@ class Core
         $controller_prefix = 'app\\Controllers\\';
         $package = '';
         $found_controller = false;
+        $route_info = array();
+
         if (!is_null($pathName)) {
-            foreach ($this->routes as $route){
+            foreach ($this->routes as $name => $route){
+
                 if ($route['path'] === $pathName) {
+                    $request_method = strtolower($this->request->get('REQUEST_METHOD','server'));
+                    $allowed_methods = array_map('strtolower', $route['methods']);
+
+                    if (!in_array($request_method, $allowed_methods)) {
+                        throw new \Exception('method not allowed', 405);
+                    }
                     $controllerName = $route['controller'];
                     $action = isset($route['action']) && !empty($route['action'])? $route['action'] : 'index';
                     $package = $route['package']. '\\';
                     $found_controller = true;
+                    $route_info = $route;
+                    $route_info['name'] = $name;
                     break;
                 }
             }
@@ -91,19 +120,19 @@ class Core
 
         $controller = $controller_prefix . $package . $controllerName . 'Controller';
 
-        try{
-            $request = array(
-                'action'    => $action,
-                'request'    => $this->request
-            );
-            if ( class_exists ( $controller ) === true) {
-                $pispatch = new $controller($request);
-            } else {
-                $pispatch = new Controller($request);
-            }
-        }
-        catch(\Exception $error) {
-            exit($error->getMessage());
+        $request = array(
+            'action'    => $action,
+            'request'    => $this->request
+        );
+
+        $dependencies = array(
+            'config' => $this->config,
+            'route' => $route_info
+        );
+        if ( class_exists ( $controller ) === true) {
+            $dispatch = new $controller($request, $dependencies);
+        } else {
+            $dispatch = new Controller($request, $dependencies);
         }
     }
 
@@ -112,27 +141,28 @@ class Core
     {
 
         if ( get_magic_quotes_gpc()) {
-            $_GET = stripSlashesDeep($_GET );
-            $_POST = stripSlashesDeep($_POST );
-            $_COOKIE = stripSlashesDeep($_COOKIE);
-            $_SESSION = stripSlashesDeep($_SESSION);
+            $_GET = $this->stripSlashesDeep($_GET );
+            $_POST = $this->stripSlashesDeep($_POST );
+            $_COOKIE = $this->stripSlashesDeep($_COOKIE);
+            $_SESSION = $this->stripSlashesDeep($_SESSION);
         }
     }
 
     // remove globals
     function unregisterGlobals()
     {
-        $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true), $_COOKIE, $_SERVER);
-
-        if (ini_get('register_globals')) {
+        if (array_key_exists('unregister_globals', $this->config['environment']) && $this->config['environment']['unregister_globals'] === true) {
             $array = array('_SESSION', '_POST', '_GET', '_COOKIE', '_REQUEST', '_SERVER', '_ENV', '_FILES');
-//            foreach ($array as $value) {
-//                unset($GLOBALS[$value]);
-//            }
+            foreach ($array as $value) {
+                unset($GLOBALS[$value]);
+            }
         }
     }
 
-    // delete invalid chars
+    /**
+     * @param $value
+     * @return array|string
+     */
     function stripSlashesDeep($value)
     {
         $value = is_array($value) ? array_map('stripSlashesDeep', $value) : stripslashes($value);
