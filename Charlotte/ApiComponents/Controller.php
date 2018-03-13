@@ -19,10 +19,14 @@ class Controller extends BaseController {
 
 
     protected function validate() {
-
         if (static::IGNORE_VALIDATION === true) {
             return true;
         }
+
+        if (isset($this->get('config')['environment']['force_validation']) && $this->get('config')['environment']['force_validation'] === false) {
+            return true;
+        }
+
         $params = $this->request->isMethod('POST') ? $this->request->getAll('post') : $this->request->getAll('get');
 
         if (static::MINIMUM_PARAMS < 0 || (static::MINIMUM_PARAMS > 0 && count(static::CHECKLIST) !== static::MINIMUM_PARAMS)) {

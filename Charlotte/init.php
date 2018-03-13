@@ -46,8 +46,7 @@ function loadClass($class)
             }
         }
         if ( $flag === false) {
-            // $class . " does not exist. Please check again"
-            $response = new \Charlotte\Core\Response(array('error'=>true, 'message'=>"Resource Not Found"), 404);
+            $response = new \Charlotte\Core\Response(array('error'=>true, 'message'=>"Resource Not Found: ". $class), 404);
             $response->process();
         }
     }
@@ -55,7 +54,8 @@ function loadClass($class)
 
 function getTrustedDirs() {
     return array(
-        'Charlotte/Core/'
+        'Charlotte/Core/',
+        'Charlotte/Services'
     );
 }
 
