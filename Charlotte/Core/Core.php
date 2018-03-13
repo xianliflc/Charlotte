@@ -11,6 +11,8 @@ namespace Charlotte\Core;
 
 use Charlotte\Core\Controller;
 use Charlotte\Core\Request;
+use Charlotte\Log\Logger;
+use Charlotte\Services\ServiceContainer;
 
 class Core
 {
@@ -19,11 +21,14 @@ class Core
     private $routes;
     private $config;
     private $request;
+    private $logger;
+    private $service_container;
 
-    const version = '0.0.4 - alpha';
+    const version = '0.0.5 - alpha';
 
     private function __construct()
     {
+        $this->logger = Logger::getInstance();
         $this->getConfigs();
     }
 
@@ -42,8 +47,9 @@ class Core
     /**
      * Main process
      */
-    function run()
+    function run( ServiceContainer $service_container)
     {
+        $this->service_container = $service_container;
         $this->setReporting();
         $this->removeMagicQuotes();
         $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true), $_COOKIE, $_SERVER, $_ENV);
@@ -125,7 +131,9 @@ class Core
             'request'    => $this->request
         );
 
+        $this->service_container->build();
         $dependencies = array(
+            'services' => $this->service_container,
             'config' => $this->config,
             'route' => $route_info
         );

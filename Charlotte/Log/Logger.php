@@ -1,6 +1,6 @@
 <?php
 
-namespace Charlotte\Core;
+namespace Charlotte\Log;
 
 class Logger
 {
@@ -15,10 +15,14 @@ class Logger
     static protected $filename;
     protected $file;
 
+    /**
+     * set file name
+     */
     public static function setFileName($filename)
     {
         self::$filename = $filename;
     }
+
     public static function getFileName()
     {
         if (self::$filename == null)
@@ -27,6 +31,7 @@ class Logger
         }
         return self::$filename;
     }
+    
     public static function enableIf($condition = true)
     {
         if ((bool) $condition)
@@ -38,7 +43,7 @@ class Logger
     {
         self::$enabled = false;
     }
-    protected static function getInstance()
+    public static function getInstance()
     {
         if (!self::hasInstance())
         {
@@ -46,7 +51,7 @@ class Logger
         }
         return self::$instance;
     }
-    protected static function hasInstance()
+    public static function hasInstance()
     {
         return self::$instance instanceof self;
     }

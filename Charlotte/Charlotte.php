@@ -7,6 +7,9 @@
  */
 
 use Charlotte\Core\Core;
+use Charlotte\Services\ServiceContainer;
+use Charlotte\Services\Service;
+use Charlotte\Core\Defination;
 
 include_once 'init.php';
 
@@ -19,8 +22,11 @@ defined('DEFAULT_CONTROLLER') or define('DEFAULT_CONTROLLER', 'Application');
 
 $core = Core::getInstance();
 
+$service_contaienr = ServiceContainer::getInstance();
+
 try {
-    $core->run();
+    //$service_contaienr->addService('test', new Service(new Defination('app\\Lib\\Service\\TestService', false, 123, 222)));
+    $core->run($service_contaienr);
 } catch (\Exception $e) {
     $response = new \Charlotte\Core\Response(array('error'=>true, 'message'=>$e->getMessage()), $e->getCode());
     $response->process();
