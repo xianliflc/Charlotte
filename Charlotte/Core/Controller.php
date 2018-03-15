@@ -8,7 +8,7 @@
 
 namespace Charlotte\Core;
 
-use Charlotte\Core\Response;
+use Charlotte\Http\Response;
 use Charlotte\Core\ErrorMessage;
 
 class Controller
@@ -16,6 +16,7 @@ class Controller
 
     protected $request;
     private $action;
+    private $manual_response;
 
     public function __construct($request, $dependencies)
     {
@@ -31,9 +32,14 @@ class Controller
             $this->validate();
         }
 
-        return $this->run();
+        $this->manual_response = $this->run();
     }
 
+    public function getManualResponse() {
+        return $this->manual_response;
+    }
+
+    
     /**
      * @throws \Exception
      */
@@ -65,15 +71,30 @@ class Controller
         if (isset($this->action )) {
             $action =  $this->get('action');
 
+            if (array_key_exists('auto_response', $this->get('config')['environment']) && $this->get('config')['environment']['auto_response'] === false) {
+                $auto_response = false;
+            } else {
+                $auto_response = true;
+            }
+
             if ((int)method_exists($this, $action . 'Action')) {
                 $response = new Response($this->{$action . 'Action'}());
+                if ($auto_response === false) {
+                    return $response;
+                }
                 $response->process();
             } else {
                 $response = new Response($this->notFoundAction());
+                if ($auto_response === false) {
+                    return $response;
+                }
                 $response->process();
             }
         } else {
             $response = new Response($this->indexAction());
+            if ($auto_response === false) {
+                return $response;
+            }
             $response->process();
         }
     }
