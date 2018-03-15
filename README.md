@@ -294,6 +294,18 @@ If you use ``` "auto_response" : false ```, then you have to do the following:
 
  </p>
 
+### Different Environments
+
+If you have different environmental variables for different environments, you may need to create a separate environment file. For example, if you have different confi for ```dev```, then you may want to create ```dev.json``` under ```config/environments/``` with different configs.
+
+```json
+{
+    "environment" : {
+        "auto_response" : false
+    }
+}
+```
+
 
 ## Components
 
