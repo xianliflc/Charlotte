@@ -46,22 +46,28 @@ function loadClass($class)
             }
         }
         if ( $flag === false) {
-            $response = new \Charlotte\Core\Response(array('error'=>true, 'message'=>"Resource Not Found: ". $class), 404);
+            $response = new \Charlotte\Http\Response(array('error'=>true, 'message'=>"Resource Not Found: ". $class), 404);
             $response->process();
         }
     }
 }
 
+/**
+ * load trusted directories
+ */
 function getTrustedDirs() {
     return array(
         'Charlotte/Core/',
-        'Charlotte/Services'
+        'Charlotte/Services/',
+        'Charlotte/Log/',
+        'Charlotte/',
+        'Charlotte/Http/'
     );
 }
 
 function getAllowedPackages() {
     return array(
-        'Time'
+        //TODO: update the logic
     );
 
 }

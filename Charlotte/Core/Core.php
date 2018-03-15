@@ -10,7 +10,7 @@ namespace Charlotte\Core;
 
 
 use Charlotte\Core\Controller;
-use Charlotte\Core\Request;
+use Charlotte\Http\Request;
 use Charlotte\Log\Logger;
 use Charlotte\Services\ServiceContainer;
 
@@ -24,7 +24,7 @@ class Core
     private $logger;
     private $service_container;
 
-    const version = '0.0.5 - alpha';
+    const version = '0.0.6 - alpha';
 
     private function __construct()
     {
@@ -54,7 +54,7 @@ class Core
         $this->removeMagicQuotes();
         $this->request = new Request($_GET, json_decode(stripSlashes(file_get_contents("php://input")), true), $_COOKIE, $_SERVER, $_ENV);
         $this->unregisterGlobals();
-        $this->Route();
+        return $this->Route();
     }
 
     /**
@@ -137,14 +137,35 @@ class Core
             'config' => $this->config,
             'route' => $route_info
         );
-        if ( class_exists ( $controller ) === true) {
-            $dispatch = new $controller($request, $dependencies);
+
+        if (array_key_exists('auto_response', $this->config['environment']) && $this->config['environment']['auto_response'] === false){
+            $auto_response = false;
         } else {
-            $dispatch = new Controller($request, $dependencies);
+            $auto_response = true;
+        }
+
+        if ( class_exists ( $controller ) === true) {
+            $response = (new $controller($request, $dependencies))->getManualResponse();
+            if ($auto_response === false) {
+                $response = (new $controller($request, $dependencies))->getManualResponse();
+                return $response;
+            } else {
+                $response = new $controller($request, $dependencies);
+            }
+        } else {
+            
+            if ($auto_response === false) {
+                $response = (new Controller($request, $dependencies))->getManualResponse();
+                return $response;
+            } else {
+                $response = new Controller($request, $dependencies);
+            }
         }
     }
 
-    // delete invalid chars
+    /**
+     * delete invalid chars
+     */
     function removeMagicQuotes()
     {
 
@@ -156,7 +177,9 @@ class Core
         }
     }
 
-    // remove globals
+    /**
+     * remove globals
+     */
     function unregisterGlobals()
     {
         if (array_key_exists('unregister_globals', $this->config['environment']) && $this->config['environment']['unregister_globals'] === true) {

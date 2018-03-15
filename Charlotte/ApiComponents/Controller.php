@@ -3,7 +3,7 @@
 namespace Charlotte\ApiComponents;
 
 use Charlotte\Core\Controller as BaseController;
-use Charlotte\Core\Response;
+use Charlotte\Http\Response;
 
 class Controller extends BaseController {
 
@@ -18,12 +18,16 @@ class Controller extends BaseController {
     const IGNORE_VALIDATION = false;
 
 
+    /**
+     * validate the input based on the checklist and minimum_params
+     */
     protected function validate() {
         if (static::IGNORE_VALIDATION === true) {
             return true;
         }
 
-        if (isset($this->get('config')['environment']['force_validation']) && $this->get('config')['environment']['force_validation'] === false) {
+        if (!isset($this->get('config')['environment']['force_validation']) || 
+            (isset($this->get('config')['environment']['force_validation']) && $this->get('config')['environment']['force_validation'] === false)) {
             return true;
         }
 

@@ -1,10 +1,12 @@
-<h1> Charlotte </h1>
+# Charlotte 
 
-<h2> Get Started </h2>
-<h4>Main Config </h4>
-<p>Create ```shared.json``` under ```config/```, like the following:
+## Get Started
+#### Main Config
+<p>
 
-```
+Create ```shared.json``` under ```config/```, like the following:
+
+```json
 {
   "env" : "dev",
   "environment" : {
@@ -23,13 +25,16 @@
   }
 }
 ```
+
 If you don't want forced validation please keep ```'force_validation' : false```
 </p>
-<h4>Route</h4>
+
+#### Route
 
 <p>
+
 Create ```routes.json``` under ```config/```, like the following:
-```
+```json
 {
     "test" : {
         "path" : "/test",
@@ -42,14 +47,15 @@ Create ```routes.json``` under ```config/```, like the following:
 ```
 </p>
 
-<h4>Application</h4>
+#### Application
 
 <p>
+
 Create ```app/``` in root directory, and create ```Controllers/```, ```Containers/``` as required.
 
 Create ```app/Controllers/Testing/TestController.php``` with the following content:
 
-```
+```php
 <?php
 
 namespace app\Controllers\Testing;
@@ -76,28 +82,28 @@ If you have force_validation on and you want skip the validation on a certain co
 
 
 Now you can test this via ```http://localhost/test```, and see the result:
-```
+```json
 {"asd":"cvdsa"}
 ```
 </p>
 
-<h4>Service Container</h4>
+#### Service Container
 
 <p> 
 Create a service container like this:
 
-```
+```php
 $service_contaienr = ServiceContainer::getInstance();
 ```
 and add a service into it before ```$core->run()```:
 
-```
+```php
 $service_contaienr->addService('test', new Service(new Defination('app\\Lib\\Service\\TestService', false, 123, 222)));
 ```
 
 The TestService.php is under ```app/lib/Service/```, and its code:
 
-```
+```php
 <?php
 
 namespace app\Lib\Service;
@@ -124,13 +130,13 @@ class TestService {
 
 </p>
 
-<h2> Routes</h2>
+## Routes
 
 <p> 
 
 You can add the following to ```/config/routes.json```:
 
-```
+```json
     "servicetest" : {
         "path" : "/test/service",
         "package" : "Testing\\ServiceTesting",
@@ -154,7 +160,7 @@ In its route, you need to specify the ```action``` which is the prefix of the me
 
 Then you can create ```ServiceTesting.php``` under ```app/Controllers/Testing/ServiceTesting/``` with the following code:
 
-```
+```php
 <?php
 
 namespace app\Controllers\Testing\ServiceTesting;
@@ -179,16 +185,16 @@ class ServiceTestController extends Controller
 ```
 </p>
 
-<h2>Service Container</h2>
+## Service Container
 
 The ```service container``` can contain all needed services across the app. You don't have to manage a lot of dependecies and services amually.
 
-<h4>Initialization</h4>
+#### Initialization
 
 <p>
 Create a service container and add needed services before core is running
 
-```
+```php
 $service_contaienr = ServiceContainer::getInstance();
 
 $service_contaienr->addService('test', new Service(new Defination('app\\Lib\\Service\\TestService', false, 123, 222)));
@@ -196,7 +202,7 @@ $service_contaienr->addService('test', new Service(new Defination('app\\Lib\\Ser
 
 The TestService.php is under ```app/lib/Service/```, and its code:
 
-```
+```php
 <?php
 
 namespace app\Lib\Service;
@@ -221,28 +227,102 @@ class TestService {
 
 now you can get the service by:
 
-```
+```php
 $this->services->getService('test')
 ```
 
 you can call the function by:
 
-```
+```php
 $this->services->getService('test')->add()
 ```
 
 you can set the property:
 
-```
+```php
 $this->services->getService('test')->c = 1000;
 ```
 
 don't forget to add:
 
-```
+```php
 use Charlotte\Services\ServiceContainer;
 use Charlotte\Services\Service;
 use Charlotte\Core\Defination;
 ```
 
+</p>
+
+## Config
+
+#### Environment Variables
+
+<p>
+
+In ```shared.json```:
+
+```json
+  "env" : "dev" , // the environment
+  "environment" : {
+      "force_validation" : false, // whether you force input validation
+      "unregister_globals" : true, // remove all registered globals
+      "auto_response" : false // all response will be sent automatically
+  }
+
+```
+
+``` force_validation ```
+The default value is ```false```, if you set it to ```true```, then you have to overwrite the ```CHECKLIST``` and  ```MINIMUM_PARAMS``` in your controller which extends apiController
+
+``` auto_response```
+
+If you use ``` "auto_response" : false ```, then you have to do the following:
+
+```php
+    $response = $core->run($service_contaienr);
+    $response->process();
+```
+ If you use ``` "auto_response" : true ``` which is the default value. You only need to do the following:
+
+ ```php
+    $response = $core->run($service_contaienr);
+ ```
+
+ ```unregister_globals```
+
+ The default value is ```false```. If you set the value to ``` true```, then you can not get access to all ```$GLOBALS```
+
+ </p>
+
+
+## Components
+
+### HTTP
+#### Request
+
+``` use Charlotte\Http\Request```
+<p>
+This class contains all you need from a HTTP request, it has properties such as :
+
+```'get', 'post', 'server', 'cookies', 'env'```
+
+It has methods such as: get, set, has, getAll, and more.
+</p>
+
+
+#### Response<
+
+``` use Charlotte\Http\Response```
+<p>
+This class builds the response based on the input, and sends the response back to client.
+
+basic usage is like the following:
+```php
+
+$response = new Response($data, 200, 'html', '');
+$response->sendResponseHeaders()->finalize();
+```
+You can use setters to set content type, cookies, headers and and more,
+
+You can use send** methods to send content type, cookies, headers, and more
 </p>

@@ -44,9 +44,16 @@ class Defination {
      * build the obj based on the params
      */
     public function build() {
+ 
+        // check if the class is singleton
+        if (is_callable(array($this->class, 'getInstance'))) {
+            $this->obj = $this->class::getInstance(...$this->params);
+        }
+        else {
+            $this->obj = new $this->class(...$this->params);
+        }
 
-        $this->obj = new $this->class(...$this->params);
-
+        // if the object is not initialized successfully, then do some handling
         if (! is_object($this->obj) || !class_exists($this->class, false)) {
             if ($this->isStrict()) {
                 throw new \Exception("Resource Not Found: " . $this->class);
