@@ -31,7 +31,6 @@ class Controller
         ) {
             $this->validate();
         }
-
         $this->manual_response = $this->run();
     }
 

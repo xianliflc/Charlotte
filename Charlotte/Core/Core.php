@@ -183,7 +183,7 @@ class Core
         }
 
         if ( class_exists ( $controller ) === true) {
-            $response = (new $controller($request, $dependencies))->getManualResponse();
+           
             if ($auto_response === false) {
                 $response = (new $controller($request, $dependencies))->getManualResponse();
                 return $response;
