@@ -18,6 +18,8 @@ class Client {
 
     public $headers;  
 
+    public $cookies;
+
     public $strictMode;    
     
     public $body;
@@ -59,6 +61,9 @@ class Client {
         $this->init($opt);
     }
 
+    /**
+     * @param array $opt
+     */
     public function init(array $opt) {
 
         // by default: don't use proxy
@@ -87,6 +92,8 @@ class Client {
         $this->strictMode = (array_key_exists('strict_mode', $opt) && $opt['strict_mode'] === false) ? false : true;
 
         $this->body = '';
+
+        $this->cookies = array();
 
         $this->options = array();
 
@@ -146,6 +153,7 @@ class Client {
      * @param string $key
      * @param mixed $value
      * @return Client $this
+     * @throws \Exception
      */
     public function set($key, $value) {
         if ($this->has($key)) {
@@ -158,18 +166,30 @@ class Client {
     }
 
 
+    /**
+     * @return mixed
+     */
     public function isStrictMode() {
         return $this->strictMode;
     }
 
-    public function setUrl(string $url) {
+    public function setUrl($url) {
         return $this->set('url', $url);
     }
 
+    /**
+     * @param $body
+     * @return Client
+     * @throws \Exception
+     */
     public function setBody($body) {
         return $this->set('body', $body);
     }
 
+    /**
+     * @param array $options
+     * @return $this
+     */
     public function setOptions(array $options) {
         foreach($options as $key => $value)
 		{
@@ -179,12 +199,21 @@ class Client {
         return $this;
     }
 
+    /**
+     * @param $option
+     * @param $value
+     * @return $this
+     */
     public function setOption($option, $value) {
 
         $this->options[$option] = $value;
         return $this;
     }
 
+    /**
+     * @param array $headers
+     * @return $this
+     */
     public function setHeaders(array $headers)
 	{
 		$this->headers = array_merge($this->headers, $headers);
@@ -226,6 +255,28 @@ class Client {
 
 	/**
 	 * 
+	 * @param array $cookies 
+	 * @return Client $this 
+	 */
+	public function cookies($cookies)
+	{
+		$this->cookies = array_merge($this->cookies, $cookies);
+		return $this;
+	}
+	/**
+	 * 
+	 * @param string $name
+	 * @param string $value
+	 * @return Client $this
+	 */
+	public function cookie($name, $value)
+	{
+		$this->cookies[$name] = $value;
+		return $this;
+	}
+
+	/**
+	 * 
 	 * @param string $server
 	 * @param int $port
 	 * @param string $type
@@ -249,16 +300,27 @@ class Client {
 		return $this;
     }
 
+    /**
+     * @param bool $value
+     * @return $this
+     * @throws \Exception
+     */
     public function useCache(bool $value) {
         $this->set('useCache', $value);
         return $this;
     }
-    
+
+    /**
+     *
+     */
     protected function parseHeaders()
 	{
 		curl_setopt($this->handle, CURLOPT_HTTPHEADER, $this->parseHeadersFormat());
     }
-    
+
+    /**
+     *
+     */
     protected function parseProxy()
 	{
 		if($this->useProxy)
@@ -271,7 +333,10 @@ class Client {
 			));
 		}
     }
-    
+
+    /**
+     * @return array
+     */
     protected function parseHeadersFormat()
 	{
 		$headers = array();
@@ -282,17 +347,32 @@ class Client {
 
 		return $headers;
     }
-    
 
 
 
 	/**
 	 * 
-	 * @param string $url
-	 * @param array $requestBody
-	 * @param array $method
-	 * @return Client 
+	 * @return void
 	 */
+	protected function parseCookies()
+	{
+		$content = '';
+		foreach($this->get('cookies') as $name => $value)
+		{
+			$content .= "{$name}={$value}; ";
+        }
+
+		curl_setopt($this->handle, CURLOPT_COOKIE, $content);
+	}
+
+    /**
+     *
+     * @param string $method
+     * @param array $url
+     * @param array body
+     * @return Client
+     * @throws \Exception
+     */
 	public function send($method = 'GET', $url = null, $body = array())
 	{
 		if(null !== $url) {
@@ -339,7 +419,8 @@ class Client {
 		curl_setopt_array($this->handle, $options);
 
 		$this->parseProxy();
-		$this->parseHeaders();
+        $this->parseHeaders();
+        $this->parseCookies();
 
 
         curl_setopt($this->handle, CURLOPT_URL, $url);
@@ -378,23 +459,39 @@ class Client {
 
 		return $this;
     }
-    
+
+    /**
+     * @return mixed
+     */
     public function getResponseStatusCode() {
         return $this->get('responseCode');
     }
 
+    /**
+     * @return mixed
+     */
     public function getResponse() {
         return $this->get('response');
     }
 
+    /**
+     * @return mixed
+     */
     public function getResponseHeader() {
         return $this->get('responseHeader');
     }
 
+    /**
+     * @return mixed
+     */
     public function getResponseBody() {
         return $this->get('responseBody');
     }
 
+    /**
+     * @param string $key
+     * @return mixed|null
+     */
     public function getResponseInfo(string $key = '') {
         if ($key === '') {
             return $this->get('responseInfo');
@@ -403,13 +500,14 @@ class Client {
         }
         
     }
-    
-	/**
-	 * GET
-	 * @param string $url
-	 * @param array $requestBody
-	 * @return mixed 
-	 */
+
+    /**
+     * GET
+     * @param string $url
+     * @param array $body
+     * @return Client
+     * @throws \Exception
+     */
 	public function sendGet($url = null, $body = array())
 	{
 		if(!empty($body))
@@ -426,17 +524,66 @@ class Client {
 		}
 		return $this->send('GET', $url, array());
     }
-    
 
-	/**
-	 * POST
-	 * @param string $url
-	 * @param array $body
-	 * @return mixed 
-	 */
+
+    /**
+     * POST
+     * @param string $url
+     * @param array $body
+     * @return Client
+     * @throws \Exception
+     */
 	public function sendPost($url = null, $body = array())
 	{
 		return $this->send('POST', $url, $body);
 	}
 
+    /**
+	 * HEAD
+	 * @param string $url
+	 * @param array $body 
+	 * @return Client 
+     * @throws \Exception
+	 */
+	public function head($url = null, $body = array())
+	{
+		return $this->send('HEAD', $url, $body);
+    }
+    
+	/**
+	 * PUT
+	 * @param string $url
+	 * @param array $body
+	 * @return Client 
+     * @throws \Exception
+	 */
+	public function put($url = null, $body = array())
+	{
+		return $this->send('PUT', $url, $body);
+    }
+    
+	/**
+	 * PATCH
+	 * @param string $url
+	 * @param array $body
+	 * @return Client 
+     * @throws \Exception
+	 */
+	public function patch($url = null, $body = array())
+	{
+		return $this->send('PATCH', $url, $body);
+    }
+    
+	/**
+	 * DELETE
+	 * @param string $url
+	 * @param array $body
+	 * @return Client 
+     * @throws \Exception
+	 */
+	public function delete($url = null, $body = array())
+	{
+		return $this->send('DELETE', $url, $body);
+    }
+    
 }
