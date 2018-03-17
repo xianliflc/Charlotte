@@ -545,7 +545,7 @@ class Client {
 	 * @return Client 
      * @throws \Exception
 	 */
-	public function head($url = null, $body = array())
+	public function sendHead($url = null, $body = array())
 	{
 		return $this->send('HEAD', $url, $body);
     }
@@ -557,7 +557,7 @@ class Client {
 	 * @return Client 
      * @throws \Exception
 	 */
-	public function put($url = null, $body = array())
+	public function sendPut($url = null, $body = array())
 	{
 		return $this->send('PUT', $url, $body);
     }
@@ -569,7 +569,7 @@ class Client {
 	 * @return Client 
      * @throws \Exception
 	 */
-	public function patch($url = null, $body = array())
+	public function sendPatch($url = null, $body = array())
 	{
 		return $this->send('PATCH', $url, $body);
     }
@@ -581,7 +581,7 @@ class Client {
 	 * @return Client 
      * @throws \Exception
 	 */
-	public function delete($url = null, $body = array())
+	public function sendDelete($url = null, $body = array())
 	{
 		return $this->send('DELETE', $url, $body);
     }
