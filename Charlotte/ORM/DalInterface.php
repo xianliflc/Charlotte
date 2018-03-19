@@ -3,7 +3,7 @@ namespace Charlotte\ORM;
 
 Interface DalInterface {
 
-    public function connect();
+    public function connect($host, $user, $pass, $dbname, $port, $driver);
 
     public function close();
 
