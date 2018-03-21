@@ -12,7 +12,7 @@ interface MapperInterface {
 
     // public function find(...$params);
 
-    public function useConnection(\PDO $conn);
+    public function useAdapter(DalAdapter $adapter);
 
     public function useDatabase(string $db);
 
