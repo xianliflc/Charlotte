@@ -15,28 +15,41 @@ class Mapper implements MapperInterface {
 
     public const TABLE_RECORDS = 2;
 
-    public const TABLE_QUERIES = 3;
+    public const TABLE_COMMITS_INSERTS = 3;
+
+    public const TABLE_COMMITS_UPDATES = 4;
+
+    public const TABLE_QUERIES = 5;
 
     protected $default_load;
 
-    public function __construct(int $default_load = 1000)
+    public function __construct(DalAdapter $adapter, int $default_load = 1000)
     {
+        $this->adapter = $adapter;
         $this->default_load = $default_load;
-        $this->cache = array();
+        $this->clearCache();
     }
-    // public function commit() {
 
-    // }
 
-    // public function persist() {
+    public function commit($force = false) {
 
-    // }
+    }
+
+    public function persist() {
+
+    }
 
     /**
      *
      */
     public function clearCache() {
-        $this->cache = array();
+        $this->cache = array(
+            self::TABLE_QUERIES => array(),
+            self::TABLE_STRUCTURE => array(),
+            self::TABLE_COMMITS_INSERTS => array(),
+            self::TABLE_COMMITS_UPDATES => array(),
+            self::TABLE_RECORDS => array()
+        );
 
         return $this;
     }
@@ -47,6 +60,7 @@ class Mapper implements MapperInterface {
 
     /**
      * @param DalAdapter $adapter
+     * @return Mapper
      */
     public function useAdapter(DalAdapter $adapter) {
         $this->adapter = $adapter;
@@ -59,6 +73,8 @@ class Mapper implements MapperInterface {
 
     /**
      * @param string $db
+     * @return Mapper
+     * @throws \Exception
      */
     public function useDatabase(string $db) {
         $this->adapter->useDatabase($db);
@@ -67,6 +83,9 @@ class Mapper implements MapperInterface {
 
     /**
      * @param string $table
+     *
+     * @return Mapper
+     * @throws \Exception
      */
     public function useTable(string $table) {
         $result = $this->adapter->useTable($table);
@@ -84,7 +103,9 @@ class Mapper implements MapperInterface {
     public function getMapping(string $table = '') {
         $table = $table !== ''? $table : $this->table;
         $mapping = $this->adapter->query('DESCRIBE '. $table);
-
+        if ($table ===  $this->table) {
+            $this->cache[self::TABLE_STRUCTURE] = $mapping;
+        }
         return $mapping;
     }
 
@@ -95,7 +116,9 @@ class Mapper implements MapperInterface {
     public function getMappingAdvance(string $table = '') {
         $table = $table !== ''? $table : $this->table;
         $mapping = $this->adapter->query('SHOW FULL COLUMNS FROM ' . $table);
-        
+        if ($table ===  $this->table) {
+            $this->cache[self::TABLE_STRUCTURE] = $mapping;
+        }
         return $mapping;
     }
 
@@ -114,7 +137,8 @@ class Mapper implements MapperInterface {
      }
 
     /**
-     * @return DalAdapter
+     * @return Mapper
+     * @throws \Exception
      */
     public function retrieveDataBases() {
         $this->adapter->retrieveDataBases();
@@ -122,7 +146,8 @@ class Mapper implements MapperInterface {
     }
 
     /**
-     * @return DalAdapter
+     * @return Mapper
+     * @throws \Exception
      */
     public function retrieveTables() {
         $this->adapter->retrieveTables();
@@ -130,28 +155,107 @@ class Mapper implements MapperInterface {
     }
 
 
+    /**
+     * @param int $property
+     * @param array $value
+     * @return Mapper $this
+     */
     public function addCache($property = self::TABLE_RECORDS , array $value) {
 
-        $this->cache[$property] = $value;
+        if (self::has_string_keys($value)) {
+            $this->cache[$property][] =  $value;
+        } else {
+            $this->cache[$property] =  array_merge($this->cache[$property], $value);
+        }
         return $this;
     }
 
+    /**
+     * @param string $table
+     * @return Mapper $this
+     * @throws \Exception
+     */
     public function retrieveData(string $table = '') {
         if ($table !== '') {
             $this->useTable($table);
         }
 
-        if(count($this->cache) > 0) {
-            $this->cache = array();
+        if(count($this->cache[self::TABLE_RECORDS]) > 0) {
+            $this->cache[self::TABLE_RECORDS] = array();
         }
         $sql = sprintf("SELECT * FROM %s LIMIT %d", $this->table, $this->default_load);
-        $this->cache = $this->adapter->query( $sql);
+        $this->cache[self::TABLE_RECORDS] = $this->adapter->query( $sql);
         return $this;
     }
 
-    public function getCache() {
-        return $this->cache;
+
+    /**
+     * @param string $key
+     * @return mixed
+     */
+    public function getCache(string $key = '') {
+        if ($key !== '' && array_key_exists($key, $this->cache)) {
+            return $this->cache[$key];
+        } else {
+           return $this->cache; 
+        }
     }
 
+    /**
+     * @param array $where
+     * @return array
+     */
+    public function findBy(array $where = array()) {
+        $result = array();
+        foreach($this->cache[self::TABLE_RECORDS] as $item) {
+            $flag = true;
+            
+            foreach($where as $key => $value) {
+                if (array_key_exists($key, $item) && $item[$key] !== $value) {
+                    $flag = false;
+                    break;
+                }
+            }
+            if ($flag) {
+              $result[] = $item;  
+            }
+        } 
+        return $result;
+    }
+
+    /**
+     * @param string $class
+     * @param array $where
+     * @param string $table
+     * @param bool $force_refresh
+     * @return mixed
+     * @throws \Exception
+     */
+    public function createEntityFromCache(string $class, array $where = array(), string $table = '', $force_refresh = false) {
+        if((count($this->cache[self::TABLE_RECORDS])> 0 && $force_refresh = true) ||
+            count($this->cache[self::TABLE_RECORDS]) === 0) {
+            $this->retrieveData($table);
+        }
+        $result = $this->findBy($where); 
+
+        $entity = new $class($this->getMappingAdvance(), $this);
+        if ($entity instanceof AbstractEntity) {
+            $entity->use($result[0]);
+        } elseif ($entity instanceof EntityContainer) {
+           $entity->use($result); 
+        } else {
+            throw new \Exception($class . ' is not entity or entity container', 500);
+        }
+        
+        return $entity;
+    }
+
+    /**
+     * @param array $array
+     * @return bool
+     */
+    public static function has_string_keys(array $array) {
+        return count(array_filter(array_keys($array), 'is_string')) > 0;
+      }
 
 }

@@ -23,7 +23,9 @@ class DalAdapter implements DalInterface{
         );
     }
 
-
+    /**
+     * @inheritdoc
+     */
     public function connect($host, $user, $pass, $dbname, $port = '3306', $driver = 'mysql') {
         try {
             $dsn = sprintf("%s:host=%s;dbname=%s;port=%s", $driver, $host, $dbname, $port);
@@ -38,11 +40,17 @@ class DalAdapter implements DalInterface{
         }
     }
 
+    /**
+     * @inheritdoc
+     */
     public function close() {
         $this->reset();
         return $this;
     }
 
+    /**
+     *
+     */
     protected function reset() {
         $this->handle = null;
         $this->db = '';
@@ -51,20 +59,31 @@ class DalAdapter implements DalInterface{
         $this->dbs = array();
     }
 
+    /**
+     *
+     */
     public function __destruct() {
         $this->close();
     }
 
+    /**
+     * @inheritdoc
+     */
     public function query(string $sql, $bindings = array()) {
         try {
             $stmt = $this->handle->prepare($sql);
             $a = $stmt->execute($bindings);
             return $stmt->fetchAll();
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             throw $e;
         }
     }
 
+    /**
+     * @param string $db
+     * @return $this
+     * @throws \Exception
+     */
     public function useDataBase(string $db) {
 
         try {
@@ -79,7 +98,7 @@ class DalAdapter implements DalInterface{
                 throw new \Exception('database not found: ' . $db);
             }
 
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             throw $e;
         }
 
@@ -87,6 +106,11 @@ class DalAdapter implements DalInterface{
 
     }
 
+    /**
+     * @param string $table
+     * @return $this
+     * @throws \Exception
+     */
     public function useTable(string $table) {
         if (count($this->tables) < 1) {
             $this->retrieveTables();
@@ -100,6 +124,10 @@ class DalAdapter implements DalInterface{
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Exception
+     */
     public function retrieveTables() {
 
         if (!$this->db && $this->db !== '') {
@@ -118,13 +146,17 @@ class DalAdapter implements DalInterface{
             foreach($temp as $table) {
                 $this->tables[] = $table['Tables_in_' . $this->db];
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             throw $e;
         }
 
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Exception
+     */
     public function retrieveDatabases() {
         try {
             $stmt = $this->handle->prepare('SHOW DATABASES');
@@ -143,25 +175,38 @@ class DalAdapter implements DalInterface{
                 $this->dbs[] = $db['Database'];
             }
 
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             throw $e;
         }
 
         return $this;
     }
 
+    /**
+     * @return mixed
+     */
     public function getHandle() {
         return $this->handle;
     }
 
+    /**
+     * @return mixed
+     */
     public function getDatabases() {
         return $this->dbs;
     }
 
+    /**
+     * @return mixed
+     */
     public function getTables() {
         return $this->tables;
     }
 
+    /**
+     * @param $key
+     * @param $value
+     */
     public function setAttribute($key, $value) {
         $this->handle->setAttribute($key, $value);
     }

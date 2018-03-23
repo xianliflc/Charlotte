@@ -4,9 +4,18 @@ namespace Charlotte\ORM;
 
 interface EntityInterface {
 
-    public function isEqualTo(EntityInterface $en): bool;
+    // /**
+    //  * @param EntityInterface $en
+    //  * @return bool
+    //  */
+    // public function compareTo(EntityInterface $en): int;
 
-    public function copy(): EntityInterface;
+    /**
+     * @return bool
+     */
+    public function isValid() : bool;
 
-    public function save(): void;
+    public function use(array $data) : EntityInterface;
+
+    public function save();
 }
