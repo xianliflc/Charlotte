@@ -11,7 +11,7 @@ class AbstractEntity implements EntityInterface{
     protected $existing;
     protected $priKeys;
 
-    public function __construct($properties = array(), Mapper &$mapper)
+    public function __construct($properties = array(), Mapper &$mapper = null)
     {
         $this->properties = $properties;
         
@@ -21,6 +21,16 @@ class AbstractEntity implements EntityInterface{
         $this->existing = false;
         $this->mapper = $mapper;
         $this->getPriKeys();
+    }
+
+
+    public function getProperties() {
+        return $this->properties;
+    }
+
+    public function setMapper(Mapper &$mapper) {
+        $this->mapper = $mapper;
+        return $this;
     }
 
     /**
@@ -158,7 +168,9 @@ class AbstractEntity implements EntityInterface{
         }
 
         $mapper->addCache($this->existing? Mapper::TABLE_COMMITS_UPDATES : Mapper::TABLE_COMMITS_INSERTS, 
-                            $this->buildParams());
+                            $this->buildParams(), $this->priKeys);
+
+        return $this;
     }
 
 }

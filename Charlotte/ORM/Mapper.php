@@ -23,7 +23,7 @@ class Mapper implements MapperInterface {
 
     protected $default_load;
 
-    public function __construct(DalAdapter $adapter, int $default_load = 1000)
+    public function __construct(DalAdapter $adapter = null, int $default_load = 1000)
     {
         $this->adapter = $adapter;
         $this->default_load = $default_load;
@@ -53,10 +53,6 @@ class Mapper implements MapperInterface {
 
         return $this;
     }
-
-    // public function find(...$params) {
-
-    // }
 
     /**
      * @param DalAdapter $adapter
@@ -100,7 +96,11 @@ class Mapper implements MapperInterface {
      * @param string $table
      * @return mixed
      */
-    public function getMapping(string $table = '') {
+    public function getMapping(string $table = '', bool $force = false) {
+        if (count($this->cache[self::TABLE_STRUCTURE]) > 0 && !$force) {
+            return $this->cache[self::TABLE_STRUCTURE];
+        }
+
         $table = $table !== ''? $table : $this->table;
         $mapping = $this->adapter->query('DESCRIBE '. $table);
         if ($table ===  $this->table) {
@@ -113,7 +113,11 @@ class Mapper implements MapperInterface {
      * @param string $table
      * @return mixed
      */
-    public function getMappingAdvance(string $table = '') {
+    public function getMappingAdvance(string $table = '', bool $force = false) {
+
+        if (count($this->cache[self::TABLE_STRUCTURE]) > 0 && !$force) {
+            return $this->cache[self::TABLE_STRUCTURE];
+        }
         $table = $table !== ''? $table : $this->table;
         $mapping = $this->adapter->query('SHOW FULL COLUMNS FROM ' . $table);
         if ($table ===  $this->table) {
@@ -158,33 +162,64 @@ class Mapper implements MapperInterface {
     /**
      * @param int $property
      * @param array $value
-     * @return Mapper $this
+     * @param array $prikeys
+     * @return $this
      */
-    public function addCache($property = self::TABLE_RECORDS , array $value) {
+    public function addCache($property = self::TABLE_RECORDS , array $value, array $prikeys = array()) {
 
         if (self::has_string_keys($value)) {
-            $this->cache[$property][] =  $value;
+            $indeces = $this->findIndcesBy($value, $property, $prikeys);
+            if(count($indeces) > 0) {
+                $this->cache[$property][$indeces[0]] = $value;
+            } else {
+                $this->cache[$property][] =  $value;
+            }
         } else {
-            $this->cache[$property] =  array_merge($this->cache[$property], $value);
+            foreach($value as $v) {
+                $indeces = $this->findIndcesBy($v, $property, $prikeys);
+                if(count($indeces) > 0) {
+                    $this->cache[$property][$indeces[0]] = $v;
+                } else {
+                    $this->cache[$property][] =  $v;
+                }
+            }
         }
         return $this;
     }
 
     /**
      * @param string $table
-     * @return Mapper $this
+     * @param array $where
+     * @param bool $force
+     * @return $this
      * @throws \Exception
      */
-    public function retrieveData(string $table = '') {
+    public function retrieveData(string $table = '', array $where = array(), bool $force = true) {
         if ($table !== '') {
             $this->useTable($table);
         }
 
-        if(count($this->cache[self::TABLE_RECORDS]) > 0) {
+        if($force === true) {
             $this->cache[self::TABLE_RECORDS] = array();
         }
-        $sql = sprintf("SELECT * FROM %s LIMIT %d", $this->table, $this->default_load);
-        $this->cache[self::TABLE_RECORDS] = $this->adapter->query( $sql);
+
+        if (count($where) > 0) {
+            $w = "";
+            $size = count($where);
+            $index = 0;
+            foreach ($where as $key => $value) {
+                $w .= $key . '=' . $value;
+                if ($index < $size - 1) {
+                    $w .= ' AND ';
+                }
+                $index++;
+            }
+            $sql = sprintf("SELECT * FROM %s WHERE %s LIMIT %d", $this->table, $w,  $this->default_load);
+        } else {
+            $sql = sprintf("SELECT * FROM %s LIMIT %d", $this->table, $this->default_load);
+        }
+
+        $this->addCache(self::TABLE_RECORDS, $this->adapter->query( $sql));
         return $this;
     }
 
@@ -203,14 +238,19 @@ class Mapper implements MapperInterface {
 
     /**
      * @param array $where
+     * @param int $property
+     * @param array $prikeys
      * @return array
      */
-    public function findBy(array $where = array()) {
+    public function findBy(array $where = array(), $property = self::TABLE_RECORDS, array $prikeys = array()) {
         $result = array();
-        foreach($this->cache[self::TABLE_RECORDS] as $item) {
+        foreach($this->cache[$property] as $item) {
             $flag = true;
             
             foreach($where as $key => $value) {
+                if (count($prikeys) > 0 && !in_array($key, $prikeys)) {
+                    continue;
+                }
                 if (array_key_exists($key, $item) && $item[$key] !== $value) {
                     $flag = false;
                     break;
@@ -224,17 +264,47 @@ class Mapper implements MapperInterface {
     }
 
     /**
+     * @param array $where
+     * @param int $property
+     * @param array $prikeys
+     * @return array
+     */
+    public function findIndcesBy(array $where = array(), $property = self::TABLE_RECORDS, array $prikeys = array()) {
+        $result = array();
+        
+        foreach($this->cache[$property] as $index => $item) {
+            $flag = true;
+            
+            foreach($where as $key => $value) {
+                if (count($prikeys) > 0 && !in_array($key, $prikeys)) {
+                    continue;
+                }
+                
+                if (array_key_exists($key, $item) && $item[$key] !== $value) {
+                    $flag = false;
+                    break;
+                }
+            }
+            if ($flag) {
+              $result[] = $index;  
+            }
+        } 
+        return $result;
+    }
+
+
+    /**
      * @param string $class
      * @param array $where
      * @param string $table
      * @param bool $force_refresh
+     * @param bool $refresh_cache
      * @return mixed
      * @throws \Exception
      */
-    public function createEntityFromCache(string $class, array $where = array(), string $table = '', $force_refresh = false) {
-        if((count($this->cache[self::TABLE_RECORDS])> 0 && $force_refresh = true) ||
-            count($this->cache[self::TABLE_RECORDS]) === 0) {
-            $this->retrieveData($table);
+    public function createEntityFromCache(string $class, array $where = array(), string $table = '', bool $force_refresh = false, bool $refresh_cache = true) {
+        if( $force_refresh === true || count($this->cache[self::TABLE_RECORDS]) === 0) {
+            $this->retrieveData($table, $where, $refresh_cache);
         }
         $result = $this->findBy($where); 
 
@@ -250,12 +320,39 @@ class Mapper implements MapperInterface {
         return $entity;
     }
 
+
+    /**
+     * @param AbstractEntity $entity
+     * @param string $property
+     * @param bool $search_in_db
+     * @return array
+     * @throws \Exception
+     */
+    public function exists(AbstractEntity  $entity, string $property = self::TABLE_RECORDS, bool $search_in_db = false) {
+        $params = $entity->buildParams();
+        $exists_in_cache = $this->findBy($params, $property);
+
+        if (!$exists_in_cache && $search_in_db) {
+            $this->retrieveData('', $params, false);
+            $exists_in_cache = $this->findBy($params, $property);
+        }
+        return $exists_in_cache;
+    }
+    
+    /**
+     * Need to commit and persist before destroying the object
+     */
+    public function __destruct() {
+        $this->commit();
+        $this->persist();
+    }
+
     /**
      * @param array $array
      * @return bool
      */
     public static function has_string_keys(array $array) {
         return count(array_filter(array_keys($array), 'is_string')) > 0;
-      }
+    }
 
 }
