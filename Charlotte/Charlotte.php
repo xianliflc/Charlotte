@@ -41,7 +41,7 @@ $core = Core::getInstance();
 $service_contaienr = ServiceContainer::getInstance();
 
 try {
-    $service_contaienr->addService('test', new Service(new Defination('app\\Lib\\Service\\TestService', false, 123, 222)));
+    //$service_contaienr->addService('test', new Service(new Defination('app\\Lib\\Service\\TestService', false, 123, 222)));
     $service_contaienr->addService('encryption', new Service(new Defination('Charlotte\\Services\\Encryption', false)));
     $response = $core->run($service_contaienr);
 
@@ -49,6 +49,5 @@ try {
 } catch (\Exception $e) {
     $response = new \Charlotte\Http\Response(array('error'=>true, 'message'=>$e->getMessage()), $e->getCode());
     $response->setContentType('json')->sendResponseHeaders()->finalize();
-    //$response->process();
 }
 
