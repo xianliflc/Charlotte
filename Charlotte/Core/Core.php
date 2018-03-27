@@ -24,7 +24,7 @@ class Core
     private $logger;
     private $service_container;
 
-    const version = '0.0.6 - alpha';
+    const version = '0.0.7 - alpha';
 
     private function __construct()
     {
@@ -63,12 +63,50 @@ class Core
      */
     public function getConfigs() {
         try {
+            
             $this->routes = json_decode(file_get_contents(ROUTES), true);
             $this->config = json_decode(file_get_contents(CONFIG), true);
+            if (ENV !== 'default') {
+                $over_write_path = APP_PATH . '../config/environments/' . strtolower(ENV). '.json';
+
+                if (!file_exists($over_write_path)) {
+                    // TODO: add logic to notice
+                } else {
+                    $config_overrwite = json_decode(file_get_contents(APP_PATH . '../config/environments/' . strtolower(ENV). '.json'), true);
+                    $this->config = $this->overWriteConfig($this->config, $config_overrwite);
+                }
+
+            }
+
         } catch (\Exception $e) {
             // TODO: more logic before throwing out the exception
             throw $e;
         }
+    }
+
+
+    /**
+     * Overwrite config files based on different environments 
+     * @param array|mixed $target
+     * @param array|mixed $overwrite
+     * @return array|mixed $result
+     */
+    private function overWriteConfig($target, $overwrite) {
+        $result = $target;
+        if (gettype($target) !== 'array') {
+            return $overwrite;
+        }
+
+        foreach ($overwrite as $key => $value) {
+            if (!array_key_exists($key, $result)) {
+                $result[$key] = $value;
+            } elseif (array_key_exists($key, $result) && $result[$key] !== $value) {
+                $result[$key] = $this->overWriteConfig($result[$key], $value);
+            } else {
+                continue;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -145,7 +183,7 @@ class Core
         }
 
         if ( class_exists ( $controller ) === true) {
-            $response = (new $controller($request, $dependencies))->getManualResponse();
+           
             if ($auto_response === false) {
                 $response = (new $controller($request, $dependencies))->getManualResponse();
                 return $response;
