@@ -64,10 +64,14 @@ function getTrustedDirs() {
         'Charlotte/Http/'
     );
 }
-
-function getAllowedPackages() {
+/**
+ * get the validated packages provided by the framework and users
+ * @return array
+ */
+function getAllowedPackages(array $config = array()) {
+    //TODO: update the logic with config file that 
     return array(
-        //TODO: update the logic
+        
     );
 
 }

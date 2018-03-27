@@ -1,6 +1,7 @@
 <?php
 namespace Charlotte\ORM;
 
+use Charlotte\ORM\Query;
 class Mapper implements MapperInterface {
 
     protected $adapter;
@@ -28,15 +29,67 @@ class Mapper implements MapperInterface {
         $this->adapter = $adapter;
         $this->default_load = $default_load;
         $this->clearCache();
+        $this->query = new Query();
     }
 
-
+    // TODO: add default values if null or empty as required, preferred implementation in entity
     public function commit($force = false) {
+        if (count($this->cache[self::TABLE_COMMITS_INSERTS]) > 0) {
+            $inserts = array();
+            $non_null_column = DBTypes::getNotNullValues($this->cache[self::TABLE_STRUCTURE]);
+            $columnList = !empty($non_null_column) ? '('.implode(', ', $non_null_column).')' : '';
+            $rowPlaceholder = ' ('.implode(', ', array_fill(1, count($non_null_column), '?')).')';
+    
+            $sql = sprintf(
+                'INSERT INTO `%s`.`%s` %s VALUES %s',
+                $this->adapter->getDataBase(),
+                $this->table,
+                $columnList,
+                implode(', ', array_fill(1, count($this->cache[self::TABLE_COMMITS_INSERTS]), $rowPlaceholder))
+            );
+    
+            foreach($this->cache[self::TABLE_COMMITS_INSERTS] as $row) {
+                foreach($row as $k => $v) {
+                    if (in_array($k, $non_null_column)) {
+                        $inserts[] = $v;
+                    }
+                }
+            }
+            
+            $this->query->addQuery($sql, $inserts);
+        }
 
+        if (count($this->cache[self::TABLE_COMMITS_UPDATES]) > 0) {
+            // TODO: add commit logic for updates
+        }
+
+        // TODO: commit: add similar logic to drop, delete, and more
+        return $this;
+        
     }
 
     public function persist() {
+        $result = 0;
+        if ($this->query->size() > 0) {
+            $size = $this->query->size();
+            for ($i = 0; $i < $size; $i++) {
+                $sql = $this->query->getQuery();
+                $bindings = $this->query->getBindings();              
+                $result += $this->adapter->update($sql, $bindings);
+            }
+            $this->query->reset();
+        }
+        if (count($this->cache[self::TABLE_COMMITS_UPDATES]) + count($this->cache[self::TABLE_COMMITS_INSERTS]) !== $result) {
+            var_dump(count($this->cache[self::TABLE_COMMITS_UPDATES]) + count($this->cache[self::TABLE_COMMITS_INSERTS]), $result);
+            //throw new \Exception('sync error', 500);
+        } else {
 
+        }
+
+        $this->cache[self::TABLE_COMMITS_INSERTS] = array();
+        $this->cache[self::TABLE_COMMITS_UPDATES] = array();
+
+        return $this;
     }
 
     /**
@@ -92,25 +145,32 @@ class Mapper implements MapperInterface {
         return $this;
     }
 
+    // /**
+    //  * @param string $table
+    //  * @param bool $force
+    //  * @return mixed
+    //  */
+    // public function getMapping(string $table = '', bool $force = false) {
+    //     if (count($this->cache[self::TABLE_STRUCTURE]) > 0 && !$force) {
+    //         return $this->cache[self::TABLE_STRUCTURE];
+    //     }
+
+    //     $table = $table !== ''? $table : $this->table;
+    //     $mapping = $this->adapter->query('DESCRIBE '. $table);
+
+    //     foreach ($mapping as $key => $value) {
+    //         $mapping[$value['Field']] =$value;
+    //         unset($mapping[$key]);
+    //     }
+    //     if ($table ===  $this->table) {
+    //         $this->cache[self::TABLE_STRUCTURE] = $mapping;
+    //     }
+    //     return $mapping;
+    // }
+
     /**
      * @param string $table
-     * @return mixed
-     */
-    public function getMapping(string $table = '', bool $force = false) {
-        if (count($this->cache[self::TABLE_STRUCTURE]) > 0 && !$force) {
-            return $this->cache[self::TABLE_STRUCTURE];
-        }
-
-        $table = $table !== ''? $table : $this->table;
-        $mapping = $this->adapter->query('DESCRIBE '. $table);
-        if ($table ===  $this->table) {
-            $this->cache[self::TABLE_STRUCTURE] = $mapping;
-        }
-        return $mapping;
-    }
-
-    /**
-     * @param string $table
+     * @param bool $force
      * @return mixed
      */
     public function getMappingAdvance(string $table = '', bool $force = false) {
@@ -120,6 +180,12 @@ class Mapper implements MapperInterface {
         }
         $table = $table !== ''? $table : $this->table;
         $mapping = $this->adapter->query('SHOW FULL COLUMNS FROM ' . $table);
+        
+        foreach ($mapping as $key => $value) {
+            $mapping[$value['Field']] =$value;
+            unset($mapping[$key]);
+        }
+
         if ($table ===  $this->table) {
             $this->cache[self::TABLE_STRUCTURE] = $mapping;
         }
@@ -308,7 +374,11 @@ class Mapper implements MapperInterface {
         }
         $result = $this->findBy($where); 
 
-        $entity = new $class($this->getMappingAdvance(), $this);
+        $entity = new $class($this->getMappingAdvance(), $this, array(
+            'data_types' => DBTypes::getDataTypes( $this->cache[self::TABLE_STRUCTURE]),
+            'primary_keys' => DBTypes::getPrimaryKeys($this->cache[self::TABLE_STRUCTURE]),
+            'not_null_columns' => DBTypes::getNotNullValues($this->cache[self::TABLE_STRUCTURE])
+        ));
         if ($entity instanceof AbstractEntity) {
             $entity->use($result[0]);
         } elseif ($entity instanceof EntityContainer) {
@@ -344,7 +414,7 @@ class Mapper implements MapperInterface {
      */
     public function __destruct() {
         $this->commit();
-        $this->persist();
+       //$this->persist();
     }
 
     /**

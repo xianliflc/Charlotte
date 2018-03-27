@@ -71,11 +71,33 @@ class DalAdapter implements DalInterface{
      */
     public function query(string $sql, $bindings = array()) {
         try {
+            $this->handle->beginTransaction();
             $stmt = $this->handle->prepare($sql);
             $a = $stmt->execute($bindings);
+            //var_dump($sql, $bindings);
+            $this->handle->commit();
             return $stmt->fetchAll();
         } catch (\PDOException $e) {
+            var_dump($stmt->errorInfo());
+
             throw $e;
+            
+        }
+    }
+
+
+    /**
+     * @inheritdoc
+     */
+    public function update(string $sql, array $bindings = array()) {
+        try {
+            $this->handle->beginTransaction();
+            $stmt = $this->handle->prepare($sql);
+            $a = $stmt->execute($bindings);
+            $this->handle->commit();
+            return $stmt->rowCount();
+        } catch (\PDOException $e) {
+            throw $e;          
         }
     }
 
@@ -91,8 +113,10 @@ class DalAdapter implements DalInterface{
                 $this->retrieveDatabases();
             }
             if (in_array($db, $this->dbs)) {
+                $this->handle->beginTransaction();
                 $sth = $this->handle->prepare('use ' . $db);
                 $this->handle->exec("use " . $db);
+                $this->handle->commit();
                 $this->db = $db;
             } else {
                 throw new \Exception('database not found: ' . $db);
@@ -135,8 +159,10 @@ class DalAdapter implements DalInterface{
         }
 
         try {
+            $this->handle->beginTransaction();
             $stmt = $this->handle->prepare('SHOW TABLES');
             $stmt->execute();
+            $this->handle->commit();
             $temp = $stmt->fetchAll();
 
             if (count($this->tables) > 0) {
@@ -159,8 +185,10 @@ class DalAdapter implements DalInterface{
      */
     public function retrieveDatabases() {
         try {
+            $this->handle->beginTransaction();
             $stmt = $this->handle->prepare('SHOW DATABASES');
             $stmt->execute();
+            $this->handle->commit();
             $temp = $stmt->fetchAll();
 
             if ($this->dbs === null) {
@@ -209,6 +237,10 @@ class DalAdapter implements DalInterface{
      */
     public function setAttribute($key, $value) {
         $this->handle->setAttribute($key, $value);
+    }
+
+    public function getDataBase() {
+        return $this->db;
     }
 
 }
