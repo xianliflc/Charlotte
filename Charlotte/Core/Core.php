@@ -24,7 +24,7 @@ class Core
     private $logger;
     private $service_container;
 
-    const version = '0.0.7 - alpha';
+    const version = '0.0.8 - alpha';
 
     private function __construct()
     {
@@ -66,11 +66,11 @@ class Core
             
             $this->routes = json_decode(file_get_contents(ROUTES), true);
             $this->config = json_decode(file_get_contents(CONFIG), true);
-            if (ENV !== 'default') {
+            if (ENV !== 'prod' || ENV !== 'production') {
                 $over_write_path = APP_PATH . '../config/environments/' . strtolower(ENV). '.json';
 
                 if (!file_exists($over_write_path)) {
-                    // TODO: add logic to notice
+                    // TODO: add logic to notice that the config file under certain environment does not exist 
                 } else {
                     $config_overrwite = json_decode(file_get_contents(APP_PATH . '../config/environments/' . strtolower(ENV). '.json'), true);
                     $this->config = $this->overWriteConfig($this->config, $config_overrwite);
@@ -79,7 +79,7 @@ class Core
             }
 
         } catch (\Exception $e) {
-            // TODO: more logic before throwing out the exception
+            // TODO: if config file is not parsed successfully, we need to do some work.
             throw $e;
         }
     }
@@ -243,6 +243,6 @@ class Core
      */
     function setReporting()
     {
-        //TODO: implementation
+        //TODO: CORE: implementation of reporting and logger
     }
 }

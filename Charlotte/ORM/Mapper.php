@@ -19,8 +19,12 @@ class Mapper implements MapperInterface {
     public const TABLE_COMMITS_INSERTS = 3;
 
     public const TABLE_COMMITS_UPDATES = 4;
+    
+    public const TABLE_COMMITS_DELETE = 5;
+    
+    public const TABLE_COMMITS_STRUCTURE = 6;
 
-    public const TABLE_QUERIES = 5;
+    public const TABLE_QUERIES = 7;
 
     protected $default_load;
 
@@ -32,7 +36,12 @@ class Mapper implements MapperInterface {
         $this->query = new Query();
     }
 
-    // TODO: add default values if null or empty as required, preferred implementation in entity
+    // TODO: Mapper: add default values if null or empty as required, preferred implementation in entity
+
+    /**
+     * @param bool $force
+     * @return $this
+     */
     public function commit($force = false) {
         if (count($this->cache[self::TABLE_COMMITS_INSERTS]) > 0) {
             $inserts = array();
@@ -60,14 +69,17 @@ class Mapper implements MapperInterface {
         }
 
         if (count($this->cache[self::TABLE_COMMITS_UPDATES]) > 0) {
-            // TODO: add commit logic for updates
+            // TODO: Mapper commit: add commit logic for updates
         }
 
-        // TODO: commit: add similar logic to drop, delete, and more
+        // TODO: Mapper commit: add similar logic to drop, delete, and more
         return $this;
         
     }
 
+    /**
+     * @return $this
+     */
     public function persist() {
         $result = 0;
         if ($this->query->size() > 0) {
@@ -79,8 +91,10 @@ class Mapper implements MapperInterface {
             }
             $this->query->reset();
         }
+        
+        // TODO: Mapper persist: update the logic if not all queries are executed successfully
         if (count($this->cache[self::TABLE_COMMITS_UPDATES]) + count($this->cache[self::TABLE_COMMITS_INSERTS]) !== $result) {
-            var_dump(count($this->cache[self::TABLE_COMMITS_UPDATES]) + count($this->cache[self::TABLE_COMMITS_INSERTS]), $result);
+            //var_dump(count($this->cache[self::TABLE_COMMITS_UPDATES]) + count($this->cache[self::TABLE_COMMITS_INSERTS]), $result);
             //throw new \Exception('sync error', 500);
         } else {
 
@@ -88,7 +102,9 @@ class Mapper implements MapperInterface {
 
         $this->cache[self::TABLE_COMMITS_INSERTS] = array();
         $this->cache[self::TABLE_COMMITS_UPDATES] = array();
-
+//        $this->cache[self::TABLE_COMMITS_DELETE] = array();
+//        $this->cache[self::TABLE_COMMITS_STRUCTURE] = array();
+        $this->query->reset();
         return $this;
     }
 
@@ -101,6 +117,8 @@ class Mapper implements MapperInterface {
             self::TABLE_STRUCTURE => array(),
             self::TABLE_COMMITS_INSERTS => array(),
             self::TABLE_COMMITS_UPDATES => array(),
+            self::TABLE_COMMITS_DELETE => array(),
+            self::TABLE_COMMITS_STRUCTURE => array(),
             self::TABLE_RECORDS => array()
         );
 
@@ -116,9 +134,9 @@ class Mapper implements MapperInterface {
         return $this;
     }
 
-    // public static function importFrom() {
-
-    // }
+     public static function importFrom() {
+         // TODO: Mapper static create mapper instance directly from another mapper instance
+     }
 
     /**
      * @param string $db
@@ -170,7 +188,7 @@ class Mapper implements MapperInterface {
 
     /**
      * @param string $table
-     * @param bool $force
+     * @param bool $force force to get new cache even if there is cache in place
      * @return mixed
      */
     public function getMappingAdvance(string $table = '', bool $force = false) {
@@ -233,6 +251,7 @@ class Mapper implements MapperInterface {
      */
     public function addCache($property = self::TABLE_RECORDS , array $value, array $prikeys = array()) {
 
+        // if this is a single record
         if (self::has_string_keys($value)) {
             $indeces = $this->findIndcesBy($value, $property, $prikeys);
             if(count($indeces) > 0) {
@@ -240,7 +259,7 @@ class Mapper implements MapperInterface {
             } else {
                 $this->cache[$property][] =  $value;
             }
-        } else {
+        } else { // if this is bulk of records
             foreach($value as $v) {
                 $indeces = $this->findIndcesBy($v, $property, $prikeys);
                 if(count($indeces) > 0) {
@@ -256,7 +275,7 @@ class Mapper implements MapperInterface {
     /**
      * @param string $table
      * @param array $where
-     * @param bool $force
+     * @param bool $force reset the cache TABLE_RECORDS if true
      * @return $this
      * @throws \Exception
      */
@@ -264,7 +283,7 @@ class Mapper implements MapperInterface {
         if ($table !== '') {
             $this->useTable($table);
         }
-
+        // reset the cache to empty array if forced
         if($force === true) {
             $this->cache[self::TABLE_RECORDS] = array();
         }
@@ -358,7 +377,6 @@ class Mapper implements MapperInterface {
         return $result;
     }
 
-
     /**
      * @param string $class
      * @param array $where
@@ -379,6 +397,7 @@ class Mapper implements MapperInterface {
             'primary_keys' => DBTypes::getPrimaryKeys($this->cache[self::TABLE_STRUCTURE]),
             'not_null_columns' => DBTypes::getNotNullValues($this->cache[self::TABLE_STRUCTURE])
         ));
+
         if ($entity instanceof AbstractEntity) {
             $entity->use($result[0]);
         } elseif ($entity instanceof EntityContainer) {
@@ -386,7 +405,6 @@ class Mapper implements MapperInterface {
         } else {
             throw new \Exception($class . ' is not entity or entity container', 500);
         }
-        
         return $entity;
     }
 
@@ -414,7 +432,10 @@ class Mapper implements MapperInterface {
      */
     public function __destruct() {
         $this->commit();
-       //$this->persist();
+        if($this->query->size() > 0) {
+            $this->persist();
+        }
+       
     }
 
     /**
@@ -422,6 +443,7 @@ class Mapper implements MapperInterface {
      * @return bool
      */
     public static function has_string_keys(array $array) {
+        // TODO: move the utility helper to a shared library or utility class
         return count(array_filter(array_keys($array), 'is_string')) > 0;
     }
 

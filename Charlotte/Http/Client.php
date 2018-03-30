@@ -383,7 +383,7 @@ class Client {
 			if(is_array($body)) {
 				$this->body = http_build_query($body, '', '&');
 			} elseif (false) {
-                // TODO: multi part curl support
+                // TODO: CURL multi part support
 			}
 			else {
 				$this->body = $body;
@@ -402,7 +402,7 @@ class Client {
             
             CURLOPT_FRESH_CONNECT   => !$this->useCache,
 
-            // TODO: cookie support
+            // TODO: CURL cookie support with file or jar
 			// CURLOPT_COOKIEFILE		=> '',
 			// CURLOPT_COOKIEJAR		=> '',
 
@@ -443,12 +443,13 @@ class Client {
             $this->set('responseHeader', substr($response, 0, $header_size));
             $this->set('responseBody', substr($response, $header_size));
             
+            // if success or 500s error then break
             if(!(0 === $code || (5 === (int)($code/100))))
             {
             	break;
             }
         }
-
+        // TODO: should add some exceptions or similar handlers here for curl
         if ($i > $this->maxRetries) {
             if (curl_errno($this->handle)) {
                 $this->responseError = curl_error($this->handle);

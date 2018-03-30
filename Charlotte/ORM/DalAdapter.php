@@ -1,5 +1,4 @@
 <?php
-
 namespace Charlotte\ORM;
 
 class DalAdapter implements DalInterface{
@@ -239,6 +238,9 @@ class DalAdapter implements DalInterface{
         $this->handle->setAttribute($key, $value);
     }
 
+    /**
+     * @return mixed
+     */
     public function getDataBase() {
         return $this->db;
     }

@@ -12,6 +12,8 @@ class AbstractEntity implements EntityInterface{
     protected $priKeys;
     protected $dataTypes;
     protected $notNullProperties;
+    // check if the enitity has any updates since it got cretaed
+    protected $hasUpdateSinceCreated;
 
 
 
@@ -26,6 +28,7 @@ class AbstractEntity implements EntityInterface{
         foreach($options as $key => $value) {
             if (gettype($value) === 'array' && in_array(strtolower($key), ['data_types', 'primary_keys', 'not_null_columns'])) {
                 switch ($key) {
+                    // TODO: add more available options if neccessary
                     case 'data_types':
                         $this->dataTypes = $value;
                         break;
@@ -40,37 +43,52 @@ class AbstractEntity implements EntityInterface{
         }
 
         if ($this->dataTypes  === null) {
-            $this->dataTypes = $this->setPropertyDataTypes();
+            $this->dataTypes = $this->parsePropertyDataTypes();
         }
 
         if ($this->priKeys === null) {
-            $this->priKeys = $this->setPrimaryKeys();
+            $this->priKeys = $this->parsePrimaryKeys();
         }
 
         if ($this->notNullProperties === null) {
-            $this->notNullProperties = $this->setNotNullProperties();
+            $this->notNullProperties = $this->parseNotNullProperties();
         }
 
     }
 
-
+    /**
+     * @return array
+     */
     public function getProperties() {
         return $this->properties;
     }
 
+    /**
+     * @param Mapper $mapper
+     * @return $this
+     */
     public function setMapper(Mapper &$mapper) {
         $this->mapper = $mapper;
         return $this;
     }
 
+    /**
+     * @return array
+     */
     public function getPriKeys() {
         return $this->priKeys;
     }
 
+    /**
+     * @return array
+     */
     public function getDataTypes() {
         return $this->dataTypes;
     }
 
+    /**
+     * @return array
+     */
     public function getNotNullProperties() {
         return $this->notNullProperties;
     }
@@ -151,6 +169,9 @@ class AbstractEntity implements EntityInterface{
         }
     }
 
+    /**
+    * save and persist changes before destroy the objectnif autosave is enabled
+    */
     public function __destruct() {
         $this->save();
         $this->mapper = null;
@@ -161,7 +182,7 @@ class AbstractEntity implements EntityInterface{
      */
     public function isValid(): bool {
 
-        //TODO: update the logic that validating the entity based on primary keys having valid values
+        //TODO: Entity: update the logic that validating the entity based on primary keys having valid values and other criterias
         return !$this->hasError && $this->isBuilt;
     }
 
@@ -175,6 +196,8 @@ class AbstractEntity implements EntityInterface{
                 $result[$key] = $this->{$key};
             } elseif (!$this->existing && $this->ableTo($key, 'insert')) {
                 $result[$key] = $this->{$key};
+            } elseif ($this->existing && $this->ableTo($key, 'delete')) {
+                // TODO: Entity: implementation that the entity can be built for deletion
             }
         }
         return $result;
@@ -183,12 +206,15 @@ class AbstractEntity implements EntityInterface{
     /**
      * @param Mapper|null $mapper
      * @return $this
+     * @throws \Exception
      */
     public function save(Mapper &$mapper = null) {
         if (is_null($mapper) ) {
             $mapper = &$this->mapper;
         }
 
+        $this->fillDefaultValues();
+        
         if ($this->isValid() && $this->arePropertiesValid()) {
             $mapper->addCache($this->existing? Mapper::TABLE_COMMITS_UPDATES : Mapper::TABLE_COMMITS_INSERTS, 
                                 $this->buildParams(), $this->priKeys);
@@ -196,10 +222,12 @@ class AbstractEntity implements EntityInterface{
             throw new \Exception('Properties are invalid', 500);
         }
 
-
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function arePropertiesValid() {
         $this->fillDefaultValues();
 
@@ -212,19 +240,34 @@ class AbstractEntity implements EntityInterface{
         return true;
     }
 
+    /**
+     *
+     */
     protected function fillDefaultValues(){
-        // TODO: add default values if value in absence 
+        // TODO: Entity: add default values if value in absence and need default values
     }
 
-    protected function setPropertyDataTypes() {
+    /**
+     * Get parsed data types for all properties
+     * @return array
+     */
+    protected function parsePropertyDataTypes() {
         return DBTypes::getDataTypes($this->properties);
     }
 
-    protected function setNotNullProperties() {
+    /**
+     * get the parsed non null properties
+     * @return array
+     */
+    protected function parseNotNullProperties() {
         return DBTypes::getNotNullValues($this->properties);
     }
 
-    protected function setPrimaryKeys() {
+    /**
+     * get the parsed primary keys in a list
+     * @return array
+     */
+    protected function parsePrimaryKeys() {
         return DBTypes::getPrimaryKeys($this->properties);
     }
 

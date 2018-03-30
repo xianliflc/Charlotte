@@ -1,9 +1,10 @@
 <?php
-
+// TODO: more comments and documentation for this DataTypes
 namespace Charlotte\ORM;
 
 class DBTypes {
 
+    // mappings for datatypes in database to those in PHP
     public const TYPE_INTEGER = 'integer';
     public const TYPE_STRING = 'string';
     public const TYPE_BINARY = 'string';
@@ -17,8 +18,14 @@ class DBTypes {
     public const TYPE_SET = 'array';
 
 
+    /**
+     * get the parsed properties from the original property list
+     * @param array $properties
+     * @return array
+     */
     public static function getDataTypes(array $properties) {
         $result = array();
+        // TODO: db types: update the logic beased on db driver
         foreach($properties as $key => $value) {
             $type = '';
             if (strpos($value['Type'], 'bit') !== false) {
@@ -51,6 +58,11 @@ class DBTypes {
         return $result;
     }
 
+    /**
+     * get the parsed not null properties from original property list
+     * @param array $properties
+     * @return array
+     */
     public static function getNotNullValues(array $properties) {
         $result = array();
         foreach($properties as $key => $value) {
@@ -61,6 +73,11 @@ class DBTypes {
         return $result;        
     }
 
+    /**
+     * Get parsed primary keys from original property list
+     * @param array $properties
+     * @return array
+     */
     public static function getPrimaryKeys(array $properties) {
         $result = array();
         foreach($properties as $key => $value) {

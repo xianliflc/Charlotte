@@ -69,7 +69,7 @@ function getTrustedDirs() {
  * @return array
  */
 function getAllowedPackages(array $config = array()) {
-    //TODO: update the logic with config file that 
+    //TODO: INIT: update the allowed packages with config file 
     return array(
         
     );

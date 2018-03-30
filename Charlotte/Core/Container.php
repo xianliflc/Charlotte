@@ -8,7 +8,6 @@
 
 namespace Charlotte\Core;
 
-
 use Charlotte\Core\SQL;
 
 class Container extends SQL
@@ -49,17 +48,17 @@ class Container extends SQL
     }
 
     protected function buildQuery($params) {
-        //TODO: more logic
+        //TODO: add logic to use query object
         return false;
     }
 
     protected function run($params) {
-        //TODO: more logic
+        //TODO: run queries or query all at once
         return false;
     }
 
     function __destruct()
     {
-
+        
     }
 }

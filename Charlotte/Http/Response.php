@@ -219,11 +219,10 @@ class Response
      */
     private $code;
 
-    public function __construct($data, $code = 200, $type = 'html', $description = '')
+    public function __construct($data, int $code = 200, string $type = 'html', string $description = '')
     {
         $this->data = is_null($data) ?
-            array('error' => true, 'message' => 'null response') :
-            $data;
+                        array('error' => true, 'message' => 'null response') : $data;
         $this->code = $code;
         $this->response = array();
         $this->dataType = gettype($this->data);
@@ -273,17 +272,23 @@ class Response
      * @param $contenttype
      * @return Response $this
      */    
-    public function setContentType($contenttype) {
-        if (is_string($contenttype) && $contenttype !== '') {
+    public function setContentType(string $contenttype = '') {
+        if ($contenttype !== '') {
             $this->content_type = $contenttype;
         }
         return $this;
     }
 
+    /**
+    * Get content type
+    */
     public function getContentType() {
         return $this->content_type;
     }
 
+    /**
+    * get status code of response
+    */
     public function getStatusCode() {
         return array('code' => $this->code, 'description' => $this->description);
     }
@@ -295,11 +300,9 @@ class Response
      * @param $description
      * @return Response $this
      */   
-    public function setStatusCode($code = 200, $description = '') {
-        if (is_int($code) && $code > 0 && is_string($description)) {
-            $this->code = $code;
-            $this->description = $description;
-        }
+    public function setStatusCode(int $code = 200, string $description = '') {
+        $this->code = $code;
+        $this->description = $description;
         return $this;
     }
 
@@ -448,7 +451,7 @@ class Response
      * @param int $expire
      * @return Response $this
      */
-    public function setCookie($name, $value = '', $expire = 0)
+    public function setCookie($name, string $value = '', $expire = 0)
     {
         $this->cookies[$name] = array(
             $name,
@@ -468,7 +471,7 @@ class Response
      */
     public function buildResponse () {
 
-        //TODO: more logic to build response
+        //TODO: HTTP RESPONSE: logic to build response from curl response
         if ($this->hasError()) {
             return array('Error'=> true, 'ErrorMessage'=>$this->get('message'));
         }
@@ -501,7 +504,7 @@ class Response
     /**
      * build the response and send the response
      */
-    public function finalize() {
+    public function finalize( $exit_code = 0) {
         $this->response = $this->buildResponse();
         if ($this->getContentType() === 'json') {
             echo json_encode($this->response);
@@ -510,12 +513,12 @@ class Response
         } else {
             return $this->data;
         }
-        
-        exit(0);
+        // TODO: http response: improvements on exit code
+        exit($exit_code);
     }
 
     public function getRendered() {
-        // TODO: add implementation of renderer
+        // TODO: HTTP Response: add implementation of renderer if it is HTML response
         return json_encode($this->response);
     }
 
