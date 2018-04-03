@@ -2,7 +2,10 @@
 namespace Charlotte\ORM;
 
 use Charlotte\ORM\Query;
+use Charlotte\Core\Config;
 class Mapper implements MapperInterface {
+
+    protected const LOAD = 1000;
 
     protected $adapter;
 
@@ -28,12 +31,27 @@ class Mapper implements MapperInterface {
 
     protected $default_load;
 
-    public function __construct(DalAdapter $adapter = null, int $default_load = 1000)
+    protected $autosave;
+
+    public function __construct(Config $config = null, DalAdapter $adapter = null)
     {
         $this->adapter = $adapter;
-        $this->default_load = $default_load;
+        $this->default_load = self::LOAD;
         $this->clearCache();
         $this->query = new Query();
+        $this->autosave = false;
+
+        if ($config instanceof Config) {
+            if ($config->has('container->default_load')) {
+                $this->default_load = (int)$config->get('container->default_load');
+            }
+
+            if ($config->has('container->autosave')) {
+                $this->autosave = (bool)$config->get('container->autosave');
+            }
+
+            var_dump($this->default_load, $this->autosave);
+        }
     }
 
     // TODO: Mapper: add default values if null or empty as required, preferred implementation in entity
@@ -134,9 +152,17 @@ class Mapper implements MapperInterface {
         return $this;
     }
 
-     public static function importFrom() {
+    public static function importFrom() {
          // TODO: Mapper static create mapper instance directly from another mapper instance
-     }
+    }
+
+    /**
+     * 
+     */
+    public function setAutosave(bool $autosave) {
+        $this->autosave = $autosave;
+        return $this;
+    }
 
     /**
      * @param string $db
@@ -431,11 +457,12 @@ class Mapper implements MapperInterface {
      * Need to commit and persist before destroying the object
      */
     public function __destruct() {
-        $this->commit();
-        if($this->query->size() > 0) {
-            $this->persist();
+        if($this->autosave === true) {
+            $this->commit();
+            if($this->query->size() > 0) {
+                $this->persist();
+            }
         }
-       
     }
 
     /**

@@ -26,8 +26,7 @@ class Controller extends BaseController {
             return true;
         }
 
-        if (!isset($this->get('config')['environment']['force_validation']) || 
-            (isset($this->get('config')['environment']['force_validation']) && $this->get('config')['environment']['force_validation'] === false)) {
+        if (!$this->get('config')->get('environment->force_validation')) {
             return true;
         }
 

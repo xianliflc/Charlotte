@@ -306,6 +306,29 @@ If you have different environmental variables for different environments, you ma
 }
 ```
 
+### Config Object
+
+You can then initialize the config object by:
+
+```php
+
+$config= new Config(json_decode(file_get_contents('path/to/shared/config'), true));
+
+
+// if you have a config for specific env then you can do the following
+$config= new Config(json_decode(file_get_contents('path/to/shared/config'), true), json_decode(file_get_contents('path/to/specific/env/config/for/overriding'), true));
+
+// you can access to config very easily
+$config->get('level1->level2->level3');
+
+// or if you have a default value for absent value
+$config->get('level1->level2->level3', 'default value');
+
+// this will ignore anything after the first ->, and return value of node 'level1'
+$config->get('level1->->level3', 'default value');
+
+```
+
 
 ## Components
 
