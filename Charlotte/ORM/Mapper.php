@@ -49,8 +49,6 @@ class Mapper implements MapperInterface {
             if ($config->has('container->autosave')) {
                 $this->autosave = (bool)$config->get('container->autosave');
             }
-
-            var_dump($this->default_load, $this->autosave);
         }
     }
 
