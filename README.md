@@ -1,7 +1,7 @@
 # Charlotte 
 
 ## Get Started
-#### Main Config
+#### Quick Start
 <p>
 
 Create ```shared.json``` under ```config/```, like the following:
@@ -130,129 +130,6 @@ class TestService {
 
 </p>
 
-## Routes
-
-<p> 
-
-You can add the following to ```/config/routes.json```:
-
-```json
-    "servicetest" : {
-        "path" : "/test/service",
-        "package" : "Testing\\ServiceTesting",
-        "controller" : "ServiceTest",
-        "action" : "test",
-        "methods": ["post", "get"],
-        "ignore_validation" : true
-    }
-```
-
-```'path'``` is the url this action is reflecting.
-
-```'package'``` is the namespace of the controller
-
-```'controller'``` is the controller name without 'Controller'
-
-```methods``` is the array of allowed methods in this action
-
-In its route, you need to specify the ```action``` which is the prefix of the method in the controller you want to run, in this case it is ```test``` refering to ```testAction```
-
-
-Then you can create ```ServiceTesting.php``` under ```app/Controllers/Testing/ServiceTesting/``` with the following code:
-
-```php
-<?php
-
-namespace app\Controllers\Testing\ServiceTesting;
-
-use Charlotte\ApiComponents\Controller;
-
-class ServiceTestController extends Controller
-{
-
-    public function testAction() {
-        $this->services->getService('test')->c = 555;
-
-        return array(
-            'message' => 'service test controller',
-            'method' => $this->request->isMethod('GET'),
-            'sum'   => ($this->services->getService('test'))->add(),
-            'is_init'  => $this->services->getService('test')->isInitialized(),
-            'test_getter' => $this->services->getService('test')->c
-        );
-    }
-}
-```
-</p>
-
-## Service Container
-
-The ```service container``` can contain all needed services across the app. You don't have to manage a lot of dependecies and services amually.
-
-#### Initialization
-
-<p>
-Create a service container and add needed services before core is running
-
-```php
-$service_contaienr = ServiceContainer::getInstance();
-
-$service_contaienr->addService('test', new Service(new Defination('app\\Lib\\Service\\TestService', false, 123, 222)));
-```
-
-The TestService.php is under ```app/lib/Service/```, and its code:
-
-```php
-<?php
-
-namespace app\Lib\Service;
-
-class TestService {
-
-    private $a;
-    private $b; 
-    public $c;
-
-    public function __construct(...$arr)
-    {
-        $this->a = $arr[0];
-        $this->b = $arr[1];
-    }
-
-    public function add() {
-        return $this->a + $this->b;
-    }
-}
-```
-
-now you can get the service by:
-
-```php
-$this->services->getService('test')
-```
-
-you can call the function by:
-
-```php
-$this->services->getService('test')->add()
-```
-
-you can set the property:
-
-```php
-$this->services->getService('test')->c = 1000;
-```
-
-don't forget to add:
-
-```php
-use Charlotte\Services\ServiceContainer;
-use Charlotte\Services\Service;
-use Charlotte\Core\Defination;
-```
-
-</p>
-
 ## Config
 
 #### Environment Variables
@@ -306,82 +183,37 @@ If you have different environmental variables for different environments, you ma
 }
 ```
 
+### Config Object
 
-## Components
-
-### HTTP
-#### Request
-
-``` use Charlotte\Http\Request```
-<p>
-This class contains all you need from a HTTP request, it has properties such as :
-
-```'get', 'post', 'server', 'cookies', 'env'```
-
-It has methods such as: get, set, has, getAll, and more.
-</p>
-
-
-#### Response
-
-``` use Charlotte\Http\Response```
-<p>
-This class builds the response based on the input, and sends the response back to client.
-
-basic usage is like the following:
-```php
-
-$response = new Response($data, 200, 'html', '');
-$response->sendResponseHeaders()->finalize();
-```
-You can use setters to set content type, cookies, headers and and more,
-
-You can use send** methods to send content type, cookies, headers, and more
-</p>
-
-
-#### Client
-
-This class is a default Curl client of this framework.
-
-You can initial it by:
+You can then initialize the config object by:
 
 ```php
-$client = new Client();
+
+$config= new Config(json_decode(file_get_contents('path/to/shared/config'), true));
+
+
+// if you have a config for specific env then you can do the following
+$config= new Config(json_decode(file_get_contents('path/to/shared/config'), true), json_decode(file_get_contents('path/to/specific/env/config/for/overriding'), true));
+
+// you can access to config very easily
+$config->get('level1->level2->level3');
+
+// or if you have a default value for absent value
+$config->get('level1->level2->level3', 'default value');
+
+// this will ignore anything after the first ->, and return value of node 'level1'
+$config->get('level1->->level3', 'default value');
+
 ```
 
-And you can do send request and receive response
-```php
-$body = $client
-    ->setHeaders(
-        array(
-            'Content-Type' => 'application/json',
-            'Authorization' => '123456'
-        )
-    )
-    ->sendPost(
-        'http://localhost/test',
-        json_encode(array(
-            "input1" =>  "1",
-            "input2" => "2",
-    ))
-    )
-    ->getResponseBody();
-$statusCode = $client->getResponseStatusCode();
-$contentType = $client->getResponseInfo()['Content-Type'];
-```
 
-For different methods, you can use respective functions:
+## Components and Features
 
-`GET`: `$client->sendGet()`
+> HTTP
 
-`POST`: `$client->sendPost()`
+> ORM
 
-`PUT`: `$client->sendPut()`
+> ROUTES
 
-`HEAD`: `$client->sendHead()`
-
-`DELETE`: `$client->sendDelete()`
-
-`PATCH`: `$client->sendPatch()`
+> SERVICE CONTAINER
 

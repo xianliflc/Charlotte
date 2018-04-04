@@ -8,7 +8,6 @@
 
 namespace Charlotte\Core;
 
-
 use Charlotte\Core\SQL;
 
 class Container extends SQL
@@ -23,10 +22,10 @@ class Container extends SQL
         }
         $this->config = $config;
 
-        if (!isset($this->config['db'])) {
+        if (!$this->config->get('container->db')) {
             throw new \Exception('No config found for database connection', 500);
         }
-        $db = $this->config['db'];
+        $db = $this->config->get('container->db');
 
         if (!isset($db['host']) || !isset($db['user']) || !isset( $db['password']) || !isset( $db['default_db'])) {
             throw new \Exception('Invalid config for database connection, please check config', 500);
@@ -49,17 +48,17 @@ class Container extends SQL
     }
 
     protected function buildQuery($params) {
-        //TODO: more logic
+        //TODO: add logic to use query object
         return false;
     }
 
     protected function run($params) {
-        //TODO: more logic
+        //TODO: run queries or query all at once
         return false;
     }
 
     function __destruct()
     {
-
+        
     }
 }

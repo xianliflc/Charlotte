@@ -32,4 +32,5 @@ interface MapperInterface {
      * @return mixed
      */
     public function useTable(string $table);
+
 }

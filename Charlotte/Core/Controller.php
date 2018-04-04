@@ -70,7 +70,7 @@ class Controller
         if (isset($this->action )) {
             $action =  $this->get('action');
 
-            if (array_key_exists('auto_response', $this->get('config')['environment']) && $this->get('config')['environment']['auto_response'] === false) {
+            if (array_key_exists('auto_response', $this->get('config')->get('environment')) && $this->get('config')->get('environment->auto_response') === false) {
                 $auto_response = false;
             } else {
                 $auto_response = true;

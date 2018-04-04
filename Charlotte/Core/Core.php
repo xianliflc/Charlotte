@@ -24,7 +24,7 @@ class Core
     private $logger;
     private $service_container;
 
-    const version = '0.0.7 - alpha';
+    const version = '0.0.8 - alpha';
 
     private function __construct()
     {
@@ -64,49 +64,24 @@ class Core
     public function getConfigs() {
         try {
             
-            $this->routes = json_decode(file_get_contents(ROUTES), true);
+            $this->routes = new Config(json_decode(file_get_contents(ROUTES), true));
             $this->config = json_decode(file_get_contents(CONFIG), true);
-            if (ENV !== 'default') {
+            if (ENV !== 'prod' || ENV !== 'production') {
                 $over_write_path = APP_PATH . '../config/environments/' . strtolower(ENV). '.json';
 
                 if (!file_exists($over_write_path)) {
-                    // TODO: add logic to notice
+                    // TODO: add logic to notice that the config file under certain environment does not exist 
                 } else {
                     $config_overrwite = json_decode(file_get_contents(APP_PATH . '../config/environments/' . strtolower(ENV). '.json'), true);
-                    $this->config = $this->overWriteConfig($this->config, $config_overrwite);
+                    $this->config = new Config($this->config, $config_overrwite);
                 }
 
             }
 
         } catch (\Exception $e) {
-            // TODO: more logic before throwing out the exception
+            // TODO: if config file is not parsed successfully, we need to do some work.
             throw $e;
         }
-    }
-
-
-    /**
-     * Overwrite config files based on different environments 
-     * @param array|mixed $target
-     * @param array|mixed $overwrite
-     * @return array|mixed $result
-     */
-    private function overWriteConfig($target, $overwrite) {
-        $result = $target;
-        if (gettype($target) !== 'array') {
-            return $overwrite;
-        }
-
-        foreach ($overwrite as $key => $value) {
-            if (!array_key_exists($key, $result)) {
-                $result[$key] = $value;
-            } elseif (array_key_exists($key, $result) && $result[$key] !== $value) {
-                $result[$key] = $this->overWriteConfig($result[$key], $value);
-            } else {
-                continue;
-            }
-        }
-        return $result;
     }
 
     /**
@@ -136,7 +111,7 @@ class Core
         $route_info = array();
 
         if (!is_null($pathName)) {
-            foreach ($this->routes as $name => $route){
+            foreach ($this->routes->getData() as $name => $route){
 
                 if ($route['path'] === $pathName) {
                     $request_method = strtolower($this->request->get('REQUEST_METHOD','server'));
@@ -170,13 +145,15 @@ class Core
         );
 
         $this->service_container->build();
+
         $dependencies = array(
             'services' => $this->service_container,
             'config' => $this->config,
-            'route' => $route_info
+            'route' => $route_info,
+            'routes' => $this->routes
         );
 
-        if (array_key_exists('auto_response', $this->config['environment']) && $this->config['environment']['auto_response'] === false){
+        if (array_key_exists('auto_response', $this->config->get('environment')) && $this->config->get('environment->auto_response') === false){
             $auto_response = false;
         } else {
             $auto_response = true;
@@ -220,7 +197,7 @@ class Core
      */
     function unregisterGlobals()
     {
-        if (array_key_exists('unregister_globals', $this->config['environment']) && $this->config['environment']['unregister_globals'] === true) {
+        if (array_key_exists('unregister_globals', $this->config->get('environment')) && $this->config->get('environment->unregister_globals') === true) {
             $array = array('_SESSION', '_POST', '_GET', '_COOKIE', '_REQUEST', '_SERVER', '_ENV', '_FILES');
             foreach ($array as $value) {
                 unset($GLOBALS[$value]);
@@ -243,6 +220,6 @@ class Core
      */
     function setReporting()
     {
-        //TODO: implementation
+        //TODO: CORE: implementation of reporting and logger
     }
 }

@@ -54,12 +54,12 @@ class ServiceContainer
      * @param $key
      * @return bool|mixed
      */
-    public function getService($key)
+    public function getService(string $key, $default = false)
     {
-        if (isset($this->container[$key])) {
+        if ($this->hasService($key)) {
             return $this->container[$key];
         } else {
-            return false;
+            return $default;
         }
     }
 
@@ -68,10 +68,10 @@ class ServiceContainer
      * @param $value
      * @throws \Exception
      */
-    public function setService($key, $value)
+    public function setService(string $key, $value)
     {
         if (!is_object($value)) {
-            throw new \Exception("Service must be object");
+            throw new \Exception("Service must be object", 500);
         }
         $this->container[$key] = $value;
     }
@@ -89,14 +89,13 @@ class ServiceContainer
         }
     }
 
-    public function get($key)
+    /**
+    * @param string $key
+    * return bool
+    */
+    public function hasService($key)
     {
-        //TODO: implementation
-    }
-
-    public function set($key, $value)
-    {
-        //TODO: implementation
+        return isset($this->container[$key]) && is_object($this->container[$key]);
     }
 
 }
