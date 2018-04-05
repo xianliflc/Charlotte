@@ -2,7 +2,7 @@
 
 namespace Charlotte\ApiComponents\DocGenerator;
 
-use Charlotte\Doc\Doc;
+use Charlotte\CDoc\Doc;
 
 
 class ApiDoc Extends Doc {
