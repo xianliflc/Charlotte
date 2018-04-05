@@ -73,7 +73,6 @@ class DalAdapter implements DalInterface{
             $this->handle->beginTransaction();
             $stmt = $this->handle->prepare($sql);
             $a = $stmt->execute($bindings);
-            //var_dump($sql, $bindings);
             $this->handle->commit();
             return $stmt->fetchAll();
         } catch (\PDOException $e) {

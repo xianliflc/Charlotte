@@ -7,12 +7,17 @@ class Config {
     private $data;
     //private static $instance = null;
 
-    public function __construct(array $data = array(), array $overwrite = array())
+    public function __construct(string $data = '', string $overwrite = '')
     {
-        $this->data = $this->overWriteConfig($data, $overwrite);
+        if ($overwrite !== '') {
+            $this->data = $this->overWriteConfig(json_decode(file_get_contents($data), true), json_decode(file_get_contents($overwrite), true));
+        } else {
+            $this->data = json_decode(file_get_contents($data), true);
+        }
+        
     }
 
-    // public static function getInstance(array $data = array(), array $overwrite = array()) {
+    // public static function getInstance(string $data = '', string $overwrite = '') {
     //     if (is_null(self::$instance)) {
     //         self::$instance = new Config($data, $overwrite);
     //     }
@@ -43,6 +48,11 @@ class Config {
         return $result;
     }
 
+    /**
+     * @param string $string
+     * @param null $default
+     * @return mixed|null
+     */
     public function get(string $string, $default = null) {
         $path = explode('->', trim($string));
         $result = $this->data;
@@ -62,7 +72,10 @@ class Config {
     }
 
 
-    
+    /**
+     * @param string $string
+     * @return bool
+     */
     public function has(string $string) {
         $path = explode('->', trim($string));
         $result = $this->data;

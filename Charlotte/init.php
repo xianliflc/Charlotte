@@ -26,6 +26,7 @@ function loadClass($class)
         $flag = false;
         foreach ($trusted_dirs as $dir) {
             $path =  $dir . $class . '.php';
+            
             if( in_array($path, $included_files)){
                 $flag = true;
                 break;
@@ -61,7 +62,10 @@ function getTrustedDirs() {
         'Charlotte/Services/',
         'Charlotte/Log/',
         'Charlotte/',
-        'Charlotte/Http/'
+        'Charlotte/Http/',
+        'Charlotte/ORM/',
+        'Charlotte/ApiComponents/',
+        'app/Controllers/'
     );
 }
 /**

@@ -189,11 +189,11 @@ You can then initialize the config object by:
 
 ```php
 
-$config= new Config(json_decode(file_get_contents('path/to/shared/config'), true));
+$config= new Config('path/to/shared/config');
 
 
 // if you have a config for specific env then you can do the following
-$config= new Config(json_decode(file_get_contents('path/to/shared/config'), true), json_decode(file_get_contents('path/to/specific/env/config/for/overriding'), true));
+$config= new Config('path/to/shared/config', 'path/to/specific/env/config/for/overriding');
 
 // you can access to config very easily
 $config->get('level1->level2->level3');
@@ -216,4 +216,6 @@ $config->get('level1->->level3', 'default value');
 > ROUTES
 
 > SERVICE CONTAINER
+
+> Doc Generator
 
