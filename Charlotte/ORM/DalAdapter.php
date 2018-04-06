@@ -76,8 +76,6 @@ class DalAdapter implements DalInterface{
             $this->handle->commit();
             return $stmt->fetchAll();
         } catch (\PDOException $e) {
-            var_dump($stmt->errorInfo());
-
             throw $e;
             
         }

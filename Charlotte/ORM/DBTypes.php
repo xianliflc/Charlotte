@@ -87,4 +87,19 @@ class DBTypes {
         }
         return $result;
     }
+
+    /**
+     * @param array $keys
+     * @param array $properties
+     * @return array
+     */
+    public static function getMandatoryPrimaryKeys(array $keys, array $properties) {
+        foreach ($keys as $k => $key) {
+            if($properties[$key]['Extra'] != '') {
+                unset($keys[$k]);
+            }
+        }
+
+        return $keys;
+    }
 }

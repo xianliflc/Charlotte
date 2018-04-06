@@ -33,6 +33,11 @@ class Mapper implements MapperInterface {
 
     protected $autosave;
 
+    /**
+     * Mapper constructor.
+     * @param Config|null $config
+     * @param DalAdapter|null $adapter
+     */
     public function __construct(Config $config = null, DalAdapter $adapter = null)
     {
         $this->adapter = $adapter;
@@ -118,7 +123,7 @@ class Mapper implements MapperInterface {
 
         $this->cache[self::TABLE_COMMITS_INSERTS] = array();
         $this->cache[self::TABLE_COMMITS_UPDATES] = array();
-//        $this->cache[self::TABLE_COMMITS_DELETE] = array();
+        $this->cache[self::TABLE_COMMITS_DELETE] = array();
 //        $this->cache[self::TABLE_COMMITS_STRUCTURE] = array();
         $this->query->reset();
         return $this;
@@ -137,9 +142,12 @@ class Mapper implements MapperInterface {
             self::TABLE_COMMITS_STRUCTURE => array(),
             self::TABLE_RECORDS => array()
         );
-
         return $this;
     }
+
+    // public function clearUnsavedCache() {
+
+    // }
 
     /**
      * @param DalAdapter $adapter
@@ -149,6 +157,7 @@ class Mapper implements MapperInterface {
         $this->adapter = $adapter;
         return $this;
     }
+
 
     public static function importFrom() {
          // TODO: Mapper static create mapper instance directly from another mapper instance
@@ -163,11 +172,36 @@ class Mapper implements MapperInterface {
     }
 
     /**
+     * @param array $properties
+     * @return bool
+     */
+    public function hasUnsavedCache(array $properties = array()) {
+        if (count($properties) < 1) {
+            return count($this->cache[self::TABLE_COMMITS_DELETE]  )> 0 ||
+                    count($this->cache[self::TABLE_COMMITS_INSERTS]  ) > 0||
+                    count($this->cache[self::TABLE_COMMITS_UPDATES]  )> 0;
+        } else {
+            foreach ($properties as $property) {
+                if (count($this->cache[$properties]  )> 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    /**
      * @param string $db
      * @return Mapper
      * @throws \Exception
      */
-    public function useDatabase(string $db) {
+    public function useDatabase(string $db = '') {
+        if ($db !== '') {
+            if ( $this->hasUnsavedCache()) {
+                $this->commit();
+            }
+            $this->persist();
+        }
         $this->adapter->useDatabase($db);
         return $this;
     }
@@ -178,7 +212,11 @@ class Mapper implements MapperInterface {
      * @return Mapper
      * @throws \Exception
      */
-    public function useTable(string $table) {
+    public function useTable(string $table = '') {
+
+        if($table !== '' && $this->table !== $table) {
+            $this->commit();
+        }
         $result = $this->adapter->useTable($table);
 
         if ($result instanceof DalAdapter) {
@@ -274,22 +312,64 @@ class Mapper implements MapperInterface {
      * @return $this
      */
     public function addCache($property = self::TABLE_RECORDS , array $value, array $prikeys = array()) {
-
         // if this is a single record
         if (self::has_string_keys($value)) {
-            $indeces = $this->findIndcesBy($value, $property, $prikeys);
-            if(count($indeces) > 0) {
-                $this->cache[$property][$indeces[0]] = $value;
-            } else {
-                $this->cache[$property][] =  $value;
+            if (in_array($property, [self::TABLE_COMMITS_DELETE, self::TABLE_COMMITS_UPDATES])) {
+
+            } elseif ($property === self::TABLE_COMMITS_INSERTS) {
+
             }
+
+            $indeces = $this->findIndcesBy($value, $property, $prikeys);
+            $indeces_record =  $this->findIndcesBy($value, self::TABLE_RECORDS, $prikeys);
+            
+            if ($property === self::TABLE_COMMITS_INSERTS) {
+                if(count($indeces_record) > 0) {
+                    $indeces_in_updates = $this->findIndcesBy($value, self::TABLE_COMMITS_UPDATES, $prikeys);
+                    if (count($indeces_in_updates) > 0) {
+                        $this->cache[self::TABLE_COMMITS_UPDATES][$indeces_in_updates[0]] = $value;
+                    } else {
+                        $this->cache[self::TABLE_COMMITS_UPDATES][] =  $value;
+                    }
+                    
+                } elseif (count($indeces) > 0) {
+                    $this->cache[self::TABLE_COMMITS_INSERTS][$indeces[0]] = $value;
+                } else {
+                    $this->cache[$property][] =  $value;
+                }
+            } else {
+                if(count($indeces) > 0) {
+                    $this->cache[$property][$indeces[0]] = $value;
+                } else {
+                    $this->cache[$property][] =  $value;
+                }
+            }
+
         } else { // if this is bulk of records
             foreach($value as $v) {
                 $indeces = $this->findIndcesBy($v, $property, $prikeys);
-                if(count($indeces) > 0) {
-                    $this->cache[$property][$indeces[0]] = $v;
+                $indeces_record =  $this->findIndcesBy($v, self::TABLE_RECORDS, $prikeys);
+
+                if ($property === self::TABLE_COMMITS_INSERTS) {
+                    if(count($indeces_record) > 0) {
+                        $indeces_in_updates = $this->findIndcesBy($v, self::TABLE_COMMITS_UPDATES, $prikeys);
+                        if (count($indeces_in_updates) > 0) {
+                            $this->cache[self::TABLE_COMMITS_UPDATES][$indeces_in_updates[0]] = $v;
+                        } else {
+                            $this->cache[self::TABLE_COMMITS_UPDATES][] =  $v;
+                        }
+                        
+                    } elseif (count($indeces) > 0) {
+                        $this->cache[self::TABLE_COMMITS_INSERTS][$indeces[0]] = $v;
+                    } else {
+                        $this->cache[$property][] =  $v;
+                    }
                 } else {
-                    $this->cache[$property][] =  $v;
+                    if(count($indeces) > 0) {
+                        $this->cache[$property][$indeces[0]] = $v;
+                    } else {
+                        $this->cache[$property][] =  $v;
+                    }
                 }
             }
         }

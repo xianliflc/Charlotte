@@ -4,7 +4,6 @@ namespace Charlotte\ApiComponents\DocGenerator;
 
 use Charlotte\CDoc\Doc;
 
-
 class ApiDoc Extends Doc {
 
     public function render($dependencies, $template) {

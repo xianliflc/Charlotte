@@ -487,6 +487,7 @@ class Response
 
         $this
             ->sendContentType()
+            ->sendStatusCode()
             ->sendHeaders()
             ->sendCookies();
             
@@ -496,6 +497,7 @@ class Response
     public function sendResponseHeaders() {
         $this
         ->sendContentType()
+        ->sendStatusCode()
         ->sendHeaders();
 
         return $this;
