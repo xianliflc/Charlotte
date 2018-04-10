@@ -24,7 +24,7 @@ class Core
     private $logger;
     private $service_container;
 
-    const version = '0.0.8 - alpha';
+    const version = '0.0.9 - alpha';
 
     private function __construct()
     {
@@ -64,16 +64,16 @@ class Core
     public function getConfigs() {
         try {
             
-            $this->routes = new Config(json_decode(file_get_contents(ROUTES), true));
-            $this->config = json_decode(file_get_contents(CONFIG), true);
+            $this->routes = new Config(ROUTES);
+            $this->config = new Config(CONFIG);
             if (ENV !== 'prod' || ENV !== 'production') {
                 $over_write_path = APP_PATH . '../config/environments/' . strtolower(ENV). '.json';
 
                 if (!file_exists($over_write_path)) {
                     // TODO: add logic to notice that the config file under certain environment does not exist 
                 } else {
-                    $config_overrwite = json_decode(file_get_contents(APP_PATH . '../config/environments/' . strtolower(ENV). '.json'), true);
-                    $this->config = new Config($this->config, $config_overrwite);
+                    //$config_overrwite = json_decode(file_get_contents(APP_PATH . '../config/environments/' . strtolower(ENV). '.json'), true);
+                    $this->config = new Config(CONFIG, APP_PATH . '../config/environments/' . strtolower(ENV). '.json');
                 }
 
             }

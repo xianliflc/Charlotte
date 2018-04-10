@@ -172,3 +172,12 @@ $data_types = $entity2->parseDataTypes(),
 $not_null_properties = $entity2->parseNotNullProperties()
 
 ```
+
+### options
+
+|name|value|default|description|
+|:----|:---:|:------:|:--------|
+|`autosave`|`boolean`|false|auto save on exit|
+|`update_if_existing`|`boolean`|false|update the record if exists|
+|`insert_if_not_existing`|`boolean`|false|insert a new record if not existing|
+|`default_load`|`integer`|1000|the size of cache load|

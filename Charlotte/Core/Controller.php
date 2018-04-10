@@ -124,7 +124,7 @@ class Controller
         }
     }
 
-    protected function errorResponse($type, $message) {
+    protected function errorResponse($type, $message, $code = 500) {
         try {
             return ErrorMessage::{$type}($message);
         } catch (\Exception $e) {

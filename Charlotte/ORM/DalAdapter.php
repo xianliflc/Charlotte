@@ -73,12 +73,9 @@ class DalAdapter implements DalInterface{
             $this->handle->beginTransaction();
             $stmt = $this->handle->prepare($sql);
             $a = $stmt->execute($bindings);
-            //var_dump($sql, $bindings);
             $this->handle->commit();
             return $stmt->fetchAll();
         } catch (\PDOException $e) {
-            var_dump($stmt->errorInfo());
-
             throw $e;
             
         }
@@ -93,11 +90,40 @@ class DalAdapter implements DalInterface{
             $this->handle->beginTransaction();
             $stmt = $this->handle->prepare($sql);
             $a = $stmt->execute($bindings);
+            
             $this->handle->commit();
             return $stmt->rowCount();
         } catch (\PDOException $e) {
+            var_dump($e->getMessage());
             throw $e;          
         }
+    }
+
+    /**
+     * @param string $sql
+     * @param array $bindings
+     * @return mixed
+     */
+    public function insert(string $sql, array $bindings = array()) {
+        return $this->update($sql, $bindings);
+    }
+
+    /**
+     * @param string $sql
+     * @param array $bindings
+     * @return mixed
+     */
+    public function delete(string $sql, array $bindings = array()) {
+        return $this->update($sql, $bindings);
+    }
+
+    /**
+     * @param string $sql
+     * @param array $bindings
+     * @return mixed
+     */
+    public function select(string $sql, array $bindings = array()) {
+        return $this->query($sql, $bindings);
     }
 
     /**

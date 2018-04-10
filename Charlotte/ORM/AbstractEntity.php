@@ -14,10 +14,16 @@ class AbstractEntity implements EntityInterface{
     protected $notNullProperties;
     // check if the enitity has any updates since it got cretaed
     protected $hasUpdateSinceCreated;
+    protected $mandatoryPriKeys;
 
 
-
-    public function __construct($properties = array(), Mapper &$mapper = null, array $options = array())
+    /**
+     * AbstractEntity constructor.
+     * @param array $properties
+     * @param Mapper|null $mapper
+     * @param array $options
+     */
+    public function __construct($properties = array(), Mapper $mapper = null, array $options = array())
     {
         $this->properties = $properties;
         $this->hasError = false;
@@ -48,6 +54,10 @@ class AbstractEntity implements EntityInterface{
 
         if ($this->priKeys === null) {
             $this->priKeys = $this->parsePrimaryKeys();
+        }
+
+        if ($this->mandatoryPriKeys === null) {
+            $this->mandatoryPriKeys = $this->parseMandatoryPrimaryKeys();
         }
 
         if ($this->notNullProperties === null) {
@@ -101,6 +111,7 @@ class AbstractEntity implements EntityInterface{
     public function use(array $data = array(), $existing = true) : EntityInterface {
         
         $result = true;
+        $this->reset();
         foreach ($data as $key => $value) {
             if (!$this->has($key)) {
                 $result = false;
@@ -135,6 +146,20 @@ class AbstractEntity implements EntityInterface{
     }
 
     /**
+     *
+     */
+    protected function reset() {
+        $this->hasError = false;
+        $this->isBuilt = false;
+        foreach($this->properties as $key => $property) {
+            if ($this->isSet($key)) {
+                //unset($this->{$key});
+                $this->{$key} = null;
+            }
+        }
+    }
+
+    /**
      * @param $name
      * @return bool
      */
@@ -144,14 +169,25 @@ class AbstractEntity implements EntityInterface{
 
     /**
      * @param $name
+     * @return bool
+     */
+    public function isSet($name) {
+        return $this->has($name) && isset($this->{$name});
+        
+    }
+
+    /**
+     * @param $name
      * @return mixed
      * @throws \Exception
      */
     public function __get($name) {
-        if ($this->has($name)) {
+        if ($this->isSet($name)) {
             return $this->$name;
+        } elseif ($this->has($name)){
+            return null;
         } else {
-            throw new \Exception($name . ': Property not existing or not accessible', 500);
+            throw new \Exception($name . ': Property not existing or not accessible or not set yet', 500);
         }
     }
 
@@ -174,7 +210,6 @@ class AbstractEntity implements EntityInterface{
     */
     public function __destruct() {
         $this->save();
-        $this->mapper = null;
     }
 
     /**
@@ -192,6 +227,9 @@ class AbstractEntity implements EntityInterface{
     public function buildParams() {
         $result =array();
         foreach($this->properties as $key => $value) {
+            if(!$this->isSet($key)) {
+                continue;
+            }
             if ($this->existing && $this->ableTo($key, 'update')) {
                 $result[$key] = $this->{$key};
             } elseif (!$this->existing && $this->ableTo($key, 'insert')) {
@@ -209,20 +247,26 @@ class AbstractEntity implements EntityInterface{
      * @throws \Exception
      */
     public function save(Mapper &$mapper = null) {
-        if (is_null($mapper) ) {
-            $mapper = &$this->mapper;
-        }
+        return $this->sync($mapper);
+    }
 
+    public function sync(Mapper &$mapper = null, int $channel = Mapper::TABLE_COMMITS_INSERTS) {
+
+        if (is_null($mapper) ) {
+            $mapper = $this->mapper;
+        }
+    
         $this->fillDefaultValues();
+        if ($this->existing && $channel === Mapper::TABLE_COMMITS_INSERTS) {
+            $channel = Mapper::TABLE_COMMITS_UPDATES;
+        }
         
         if ($this->isValid() && $this->arePropertiesValid()) {
-            $mapper->addCache($this->existing? Mapper::TABLE_COMMITS_UPDATES : Mapper::TABLE_COMMITS_INSERTS, 
-                                $this->buildParams(), $this->priKeys);
+            $mapper->addCache($channel, $this->buildParams(), $this->mandatoryPriKeys);  
         } else {
             throw new \Exception('Properties are invalid', 500);
         }
-
-        return $this;
+        return $this;       
     }
 
     /**
@@ -232,7 +276,8 @@ class AbstractEntity implements EntityInterface{
         $this->fillDefaultValues();
 
         foreach($this->properties as $key => $value) {
-            if ((is_null($this->{$key}) && in_array($key, $this->notNullProperties)) ||gettype($this->{$key}) !== $this->dataTypes[$key]) {
+            if ((!$this->isSet($key) && in_array($key, $this->notNullProperties)) ||
+                ($this->isSet($key) && gettype($this->{$key}) !== $this->dataTypes[$key])) {
                 return false;
             }
         }
@@ -269,6 +314,20 @@ class AbstractEntity implements EntityInterface{
      */
     protected function parsePrimaryKeys() {
         return DBTypes::getPrimaryKeys($this->properties);
+    }
+
+    /**
+     * @return array
+     */
+    protected function parseMandatoryPrimaryKeys() {
+        return DBTypes::getMandatoryPrimaryKeys($this->priKeys, $this->properties);
+    }
+
+    /**
+     * @return Mapper|null
+     */
+    public function getMapper() {
+        return $this->mapper;
     }
 
 }
