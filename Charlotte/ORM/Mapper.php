@@ -33,6 +33,17 @@ class Mapper implements MapperInterface {
 
     protected $autosave;
 
+    protected const TABLE_PLACEHOLDER_START = '{{@';
+
+    protected const TABLE_PLACEHOLDER_END = '@}}';
+
+    protected $insert_if_not_existing = false;
+
+    protected $update_if_existing = false;
+
+    protected $id;
+
+
     /**
      * Mapper constructor.
      * @param Config|null $config
@@ -40,11 +51,13 @@ class Mapper implements MapperInterface {
      */
     public function __construct(Config $config = null, DalAdapter $adapter = null)
     {
-        $this->adapter = $adapter;
+        $this->adapter = &$adapter;
         $this->default_load = self::LOAD;
         $this->clearCache();
         $this->query = new Query();
         $this->autosave = false;
+        // the default id
+        $this->id = 'id';
 
         if ($config instanceof Config) {
             if ($config->has('container->default_load')) {
@@ -53,6 +66,14 @@ class Mapper implements MapperInterface {
 
             if ($config->has('container->autosave')) {
                 $this->autosave = (bool)$config->get('container->autosave');
+            }
+
+            if ($config->has('container->insert_if_not_existing')) {
+                $this->insert_if_not_existing = (bool)$config->get('container->insert_if_not_existing');
+            }
+
+            if ($config->has('container->update_if_existing')) {
+                $this->update_if_existing = (bool)$config->get('container->update_if_existing');
             }
         }
     }
@@ -64,6 +85,7 @@ class Mapper implements MapperInterface {
      * @return $this
      */
     public function commit($force = false) {
+
         if (count($this->cache[self::TABLE_COMMITS_INSERTS]) > 0) {
             $inserts = array();
             $non_null_column = DBTypes::getNotNullValues($this->cache[self::TABLE_STRUCTURE]);
@@ -88,14 +110,86 @@ class Mapper implements MapperInterface {
             
             $this->query->addQuery($sql, $inserts);
         }
-
+        
         if (count($this->cache[self::TABLE_COMMITS_UPDATES]) > 0) {
             // TODO: Mapper commit: add commit logic for updates
+            $properties = array_keys($this->cache[self::TABLE_RECORDS][0]);
+
+            $sql = sprintf(
+                'UPDATE `%s`.`%s` SET ' . self::TABLE_PLACEHOLDER_START. self::TABLE_PLACEHOLDER_END,
+                $this->adapter->getDataBase(),
+                $this->table
+            );
+
+            $id_index = array_search($this->id, $properties);
+            if ($id_index > 0) {
+                $temp = $properties[$id_index];
+                $properties[$id_index] = $properties[0];
+                $properties[0] = $temp;
+
+            }
+
+            for ($index = 0; $index < count($properties); $index++) {
+                
+                if ($index < count($properties) - 1) {
+
+                    if ($properties[$index] === $this->id) {
+                        continue;
+                    }
+
+                    $sql = str_replace(self::TABLE_PLACEHOLDER_START. self::TABLE_PLACEHOLDER_END, 
+                                       '`' . $properties[$index] . '` = (CASE ' .  $this->id . ' ' . self::TABLE_PLACEHOLDER_START. $properties[$index] . self::TABLE_PLACEHOLDER_END . ' END), ' . self::TABLE_PLACEHOLDER_START. self::TABLE_PLACEHOLDER_END,
+                                       $sql
+                    );
+                } else {
+
+                    $sql = str_replace(self::TABLE_PLACEHOLDER_START. self::TABLE_PLACEHOLDER_END, 
+                    '`' . $properties[$index] . '` = (CASE ' .  $this->id . ' ' . self::TABLE_PLACEHOLDER_START. $properties[$index] . self::TABLE_PLACEHOLDER_END . ' END) WHERE ' . $this->id . ' IN ( ' . self::TABLE_PLACEHOLDER_START. $this->id . self::TABLE_PLACEHOLDER_END . ')',
+                    $sql
+                    );
+
+                }
+            }
+            
+            $updates = array();
+            $lastElement = end($this->cache[self::TABLE_COMMITS_UPDATES]);
+
+            foreach($this->cache[self::TABLE_COMMITS_UPDATES] as $row) {
+
+                $indx = array_search($row, $this->cache[self::TABLE_COMMITS_UPDATES]);
+                $record = $this->cache[self::TABLE_RECORDS][$indx];
+                
+                foreach ($record as $key => $value) {
+
+                    if ($key === $this->id) {
+                        continue;
+                    }
+
+                    if (array_key_exists($key, $row)) {
+                        $record[$key] = $row[$key];
+                    }
+
+                    $sql = str_replace(self::TABLE_PLACEHOLDER_START. $key . self::TABLE_PLACEHOLDER_END,
+                            ' WHEN ' . $record[$this->id] . ' THEN ? ' . self::TABLE_PLACEHOLDER_START. $key . self::TABLE_PLACEHOLDER_END,
+                            $sql);
+                    $updates[] = $record[$key];
+                }
+                $sql = str_replace(self::TABLE_PLACEHOLDER_START. $this->id . self::TABLE_PLACEHOLDER_END,
+                        $record[$this->id] . ($row === $lastElement ? '' : ', ') .self::TABLE_PLACEHOLDER_START. $this->id . self::TABLE_PLACEHOLDER_END,
+                        $sql);
+            }
+
+            foreach($properties as $value) {
+                $sql = str_replace(self::TABLE_PLACEHOLDER_START. $value . self::TABLE_PLACEHOLDER_END, '', $sql);
+            }
+            
+            $sql = str_replace(self::TABLE_PLACEHOLDER_START. $this->id . self::TABLE_PLACEHOLDER_END, '', $sql);
+            $this->query->addQuery($sql, $updates);
         }
+        $this->postCommit();
 
         // TODO: Mapper commit: add similar logic to drop, delete, and more
         return $this;
-        
     }
 
     /**
@@ -114,19 +208,29 @@ class Mapper implements MapperInterface {
         }
         
         // TODO: Mapper persist: update the logic if not all queries are executed successfully
-        if (count($this->cache[self::TABLE_COMMITS_UPDATES]) + count($this->cache[self::TABLE_COMMITS_INSERTS]) !== $result) {
-            //var_dump(count($this->cache[self::TABLE_COMMITS_UPDATES]) + count($this->cache[self::TABLE_COMMITS_INSERTS]), $result);
-            //throw new \Exception('sync error', 500);
-        } else {
+        // if (count($this->cache[self::TABLE_COMMITS_UPDATES]) + count($this->cache[self::TABLE_COMMITS_INSERTS]) !== $result) {
+        //     //var_dump(count($this->cache[self::TABLE_COMMITS_UPDATES]) + count($this->cache[self::TABLE_COMMITS_INSERTS]), $result);
+        //     //throw new \Exception('sync error', 500);
+        // } else {
 
-        }
+        // }
+        return $this;
+    }
 
+    /**
+     * @param string $id
+     */
+    public function useID($id = 'id') {
+        $this->id = $id;
+    }
+
+    /**
+     * Some cleaning work after commit
+     */
+    protected function postCommit() {
         $this->cache[self::TABLE_COMMITS_INSERTS] = array();
         $this->cache[self::TABLE_COMMITS_UPDATES] = array();
         $this->cache[self::TABLE_COMMITS_DELETE] = array();
-//        $this->cache[self::TABLE_COMMITS_STRUCTURE] = array();
-        $this->query->reset();
-        return $this;
     }
 
     /**
@@ -154,7 +258,7 @@ class Mapper implements MapperInterface {
      * @return Mapper
      */
     public function useAdapter(DalAdapter $adapter) {
-        $this->adapter = $adapter;
+        $this->adapter = &$adapter;
         return $this;
     }
 
@@ -326,22 +430,29 @@ class Mapper implements MapperInterface {
             if ($property === self::TABLE_COMMITS_INSERTS) {
                 if(count($indeces_record) > 0) {
                     $indeces_in_updates = $this->findIndcesBy($value, self::TABLE_COMMITS_UPDATES, $prikeys);
-                    if (count($indeces_in_updates) > 0) {
-                        $this->cache[self::TABLE_COMMITS_UPDATES][$indeces_in_updates[0]] = $value;
-                    } else {
-                        $this->cache[self::TABLE_COMMITS_UPDATES][] =  $value;
+                    if ($this->update_if_existing) {
+                        $this->cache[self::TABLE_COMMITS_UPDATES][$indeces_record[0]] = $value;
                     }
-                    
+
                 } elseif (count($indeces) > 0) {
                     $this->cache[self::TABLE_COMMITS_INSERTS][$indeces[0]] = $value;
                 } else {
+                    $this->cache[self::TABLE_COMMITS_INSERTS][] =  $value;
+                }
+            }  elseif (in_array($property, [self::TABLE_RECORDS, self::TABLE_STRUCTURE])) {
+                if(count($indeces) > 0) {
+                    $this->cache[$property][$indeces[0]] = $value;
+                } else{
                     $this->cache[$property][] =  $value;
                 }
             } else {
                 if(count($indeces) > 0) {
                     $this->cache[$property][$indeces[0]] = $value;
-                } else {
-                    $this->cache[$property][] =  $value;
+                } elseif(count($indeces_record) > 0) {
+                    // TODO: deal with the situation that same record is in updates and delete at meantime
+                    $this->cache[$property][$indeces_record[0]] =  $value;
+                } elseif ($this->insert_if_not_existing && $property === self::TABLE_COMMITS_UPDATES) {
+                    $this->cache[self::TABLE_COMMITS_INSERTS][] =  $value;
                 }
             }
 
@@ -353,22 +464,29 @@ class Mapper implements MapperInterface {
                 if ($property === self::TABLE_COMMITS_INSERTS) {
                     if(count($indeces_record) > 0) {
                         $indeces_in_updates = $this->findIndcesBy($v, self::TABLE_COMMITS_UPDATES, $prikeys);
-                        if (count($indeces_in_updates) > 0) {
-                            $this->cache[self::TABLE_COMMITS_UPDATES][$indeces_in_updates[0]] = $v;
-                        } else {
-                            $this->cache[self::TABLE_COMMITS_UPDATES][] =  $v;
+                        if ($this->update_if_existing) {
+                            $this->cache[self::TABLE_COMMITS_UPDATES][$indeces_record[0]] = $v;
                         }
-                        
+    
                     } elseif (count($indeces) > 0) {
                         $this->cache[self::TABLE_COMMITS_INSERTS][$indeces[0]] = $v;
                     } else {
+                        $this->cache[self::TABLE_COMMITS_INSERTS][] =  $v;
+                    }
+                }  elseif (in_array($property, [self::TABLE_RECORDS, self::TABLE_STRUCTURE])) {
+                    if(count($indeces) > 0) {
+                        $this->cache[$property][$indeces[0]] = $v;
+                    } else{
                         $this->cache[$property][] =  $v;
                     }
                 } else {
                     if(count($indeces) > 0) {
                         $this->cache[$property][$indeces[0]] = $v;
-                    } else {
-                        $this->cache[$property][] =  $v;
+                    } elseif(count($indeces_record) > 0) {
+                        // TODO: deal with the situation that same record is in updates and delete at meantime
+                        $this->cache[$property][$indeces_record[0]] =  $v;
+                    } elseif ($this->insert_if_not_existing && $property === self::TABLE_COMMITS_UPDATES) {
+                        $this->cache[self::TABLE_COMMITS_INSERTS][] =  $v;
                     }
                 }
             }
@@ -426,14 +544,15 @@ class Mapper implements MapperInterface {
     }
 
     /**
+     * Main function to find record in certain array
      * @param array $where
-     * @param int $property
+     * @param array $data
      * @param array $prikeys
      * @return array
      */
-    public function findBy(array $where = array(), $property = self::TABLE_RECORDS, array $prikeys = array()) {
+    protected function findByMain(array $where = array(), array $data = array(), array $prikeys = array()) {
         $result = array();
-        foreach($this->cache[$property] as $item) {
+        foreach($data as $item) {
             $flag = true;
             
             foreach($where as $key => $value) {
@@ -453,15 +572,16 @@ class Mapper implements MapperInterface {
     }
 
     /**
+     * Main function to find index of record in a certain array
      * @param array $where
-     * @param int $property
+     * @param array $data
      * @param array $prikeys
      * @return array
      */
-    public function findIndcesBy(array $where = array(), $property = self::TABLE_RECORDS, array $prikeys = array()) {
+    protected function findIndcesByMain(array $where = array(), array $data = array(), array $prikeys = array()) {
         $result = array();
         
-        foreach($this->cache[$property] as $index => $item) {
+        foreach($data as $index => $item) {
             $flag = true;
             
             foreach($where as $key => $value) {
@@ -479,6 +599,26 @@ class Mapper implements MapperInterface {
             }
         } 
         return $result;
+    }
+
+    /**
+     * @param array $where
+     * @param int $property
+     * @param array $prikeys
+     * @return array
+     */
+    protected function findBy(array $where = array(), $property = self::TABLE_RECORDS, array $prikeys = array()) {
+        return $this->findByMain($where, $this->cache[$property], $prikeys);
+    }
+
+    /**
+     * @param array $where
+     * @param int $property
+     * @param array $prikeys
+     * @return array
+     */
+    protected function findIndcesBy(array $where = array(), $property = self::TABLE_RECORDS, array $prikeys = array()) {
+        return $this->findIndcesByMain($where, $this->cache[$property], $prikeys);
     }
 
     /**
