@@ -247,19 +247,26 @@ class AbstractEntity implements EntityInterface{
      * @throws \Exception
      */
     public function save(Mapper &$mapper = null) {
+        return $this->sync($mapper);
+    }
+
+    public function sync(Mapper &$mapper = null, int $channel = Mapper::TABLE_COMMITS_INSERTS) {
+
         if (is_null($mapper) ) {
             $mapper = $this->mapper;
         }
     
         $this->fillDefaultValues();
+        if ($this->existing && $channel === Mapper::TABLE_COMMITS_INSERTS) {
+            $channel = Mapper::TABLE_COMMITS_UPDATES;
+        }
+        
         if ($this->isValid() && $this->arePropertiesValid()) {
-            $mapper->addCache($this->existing? Mapper::TABLE_COMMITS_UPDATES : Mapper::TABLE_COMMITS_INSERTS, 
-                                $this->buildParams(), $this->mandatoryPriKeys);
-                                
+            $mapper->addCache($channel, $this->buildParams(), $this->mandatoryPriKeys);  
         } else {
             throw new \Exception('Properties are invalid', 500);
         }
-        return $this;
+        return $this;       
     }
 
     /**

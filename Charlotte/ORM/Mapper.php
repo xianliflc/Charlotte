@@ -43,6 +43,8 @@ class Mapper implements MapperInterface {
 
     protected $id;
 
+    protected $only_in_cache;
+
 
     /**
      * Mapper constructor.
@@ -58,6 +60,7 @@ class Mapper implements MapperInterface {
         $this->autosave = false;
         // the default id
         $this->id = 'id';
+        $this->only_in_cache = false;
 
         if ($config instanceof Config) {
             if ($config->has('container->default_load')) {
@@ -74,6 +77,14 @@ class Mapper implements MapperInterface {
 
             if ($config->has('container->update_if_existing')) {
                 $this->update_if_existing = (bool)$config->get('container->update_if_existing');
+            }
+
+            if ($config->has('container->update_if_existing')) {
+                $this->update_if_existing = (bool)$config->get('container->update_if_existing');
+            }
+
+            if ($config->has('container->only_in_cache')) {
+                $this->only_in_cache = (bool)$config->get('container->only_in_cache');
             }
         }
     }
@@ -185,6 +196,33 @@ class Mapper implements MapperInterface {
             
             $sql = str_replace(self::TABLE_PLACEHOLDER_START. $this->id . self::TABLE_PLACEHOLDER_END, '', $sql);
             $this->query->addQuery($sql, $updates);
+        }
+
+        if (count($this->cache[self::TABLE_COMMITS_DELETE]) > 0) {
+            $deletes = array();
+            $sql = sprintf(
+                'DELETE FROM `%s`.`%s` WHERE ' . $this->id . ' IN ('. self::TABLE_PLACEHOLDER_START. $this->id . self::TABLE_PLACEHOLDER_END . ')',
+                $this->adapter->getDataBase(),
+                $this->table
+            );
+            foreach($this->cache[self::TABLE_COMMITS_DELETE] as $row) {
+                if (array_key_exists($this->id, $row) && !empty($row[$this->id])) {
+                    $id = $row[$this->id];
+                } else {
+                    $indx = array_search($row, $this->cache[self::TABLE_COMMITS_DELETE]);
+                    $record = $this->cache[self::TABLE_RECORDS][$indx];
+                    $id = $record[$this->id];
+                }
+                $sql = str_replace(self::TABLE_PLACEHOLDER_START. $this->id . self::TABLE_PLACEHOLDER_END,
+                        $id . ', ' . self::TABLE_PLACEHOLDER_START. $this->id . self::TABLE_PLACEHOLDER_END,
+                        $sql);
+
+            }
+            $sql = str_replace(', ' .self::TABLE_PLACEHOLDER_START. $this->id . self::TABLE_PLACEHOLDER_END,
+                                '', 
+                                $sql);
+                                var_dump($sql);
+            $this->query->addQuery($sql, $deletes);
         }
         $this->postCommit();
 
@@ -690,6 +728,10 @@ class Mapper implements MapperInterface {
     public static function has_string_keys(array $array) {
         // TODO: move the utility helper to a shared library or utility class
         return count(array_filter(array_keys($array), 'is_string')) > 0;
+    }
+
+    public function doesOnlyWorkInCache() {
+        return $this->only_in_cache;
     }
 
 }

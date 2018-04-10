@@ -90,9 +90,11 @@ class DalAdapter implements DalInterface{
             $this->handle->beginTransaction();
             $stmt = $this->handle->prepare($sql);
             $a = $stmt->execute($bindings);
+            
             $this->handle->commit();
             return $stmt->rowCount();
         } catch (\PDOException $e) {
+            var_dump($e->getMessage());
             throw $e;          
         }
     }
