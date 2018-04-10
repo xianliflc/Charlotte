@@ -98,6 +98,33 @@ class DalAdapter implements DalInterface{
     }
 
     /**
+     * @param string $sql
+     * @param array $bindings
+     * @return mixed
+     */
+    public function insert(string $sql, array $bindings = array()) {
+        return $this->update($sql, $bindings);
+    }
+
+    /**
+     * @param string $sql
+     * @param array $bindings
+     * @return mixed
+     */
+    public function delete(string $sql, array $bindings = array()) {
+        return $this->update($sql, $bindings);
+    }
+
+    /**
+     * @param string $sql
+     * @param array $bindings
+     * @return mixed
+     */
+    public function select(string $sql, array $bindings = array()) {
+        return $this->query($sql, $bindings);
+    }
+
+    /**
      * @param string $db
      * @return $this
      * @throws \Exception

@@ -23,7 +23,7 @@ class AbstractEntity implements EntityInterface{
      * @param Mapper|null $mapper
      * @param array $options
      */
-    public function __construct($properties = array(), Mapper &$mapper = null, array $options = array())
+    public function __construct($properties = array(), Mapper $mapper = null, array $options = array())
     {
         $this->properties = $properties;
         $this->hasError = false;
@@ -210,7 +210,6 @@ class AbstractEntity implements EntityInterface{
     */
     public function __destruct() {
         $this->save();
-        $this->mapper = null;
     }
 
     /**
@@ -249,7 +248,7 @@ class AbstractEntity implements EntityInterface{
      */
     public function save(Mapper &$mapper = null) {
         if (is_null($mapper) ) {
-            $mapper = &$this->mapper;
+            $mapper = $this->mapper;
         }
     
         $this->fillDefaultValues();
@@ -315,6 +314,13 @@ class AbstractEntity implements EntityInterface{
      */
     protected function parseMandatoryPrimaryKeys() {
         return DBTypes::getMandatoryPrimaryKeys($this->priKeys, $this->properties);
+    }
+
+    /**
+     * @return Mapper|null
+     */
+    public function getMapper() {
+        return $this->mapper;
     }
 
 }
