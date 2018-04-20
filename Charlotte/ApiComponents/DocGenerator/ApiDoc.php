@@ -30,29 +30,37 @@ class ApiDoc Extends Doc {
                             $new_data[$group]['endpoints'][$url]['RequestUrl'] = $url;
                         }
 
-                        foreach($new_data[$group]['endpoints'][$url]['RequestExample'] as $key => $item) {
-                            if (in_array($item['datatype'], ['json', 'array', 'object'])){
-                                $new_data[$group]['endpoints'][$url]['RequestExample'][$key]['value'] = 
-                                    str_replace("'", '"', $new_data[$group]['endpoints'][$url]['RequestExample'][$key]['value']);
+                        if (array_key_exists('RequestExample', $new_data[$group]['endpoints'][$url])) {
+                            foreach($new_data[$group]['endpoints'][$url]['RequestExample'] as $key => $item) {
+                                if (in_array($item['datatype'], ['json', 'array', 'object'])){
+                                    $new_data[$group]['endpoints'][$url]['RequestExample'][$key]['value'] = 
+                                        str_replace("'", '"', $new_data[$group]['endpoints'][$url]['RequestExample'][$key]['value']);
+                                }
+                                
                             }
-                            
                         }
 
-                        foreach($new_data[$group]['endpoints'][$url]['ResponseExample'] as $key => $item) {
-                            if (in_array($item['datatype'], ['json', 'array', 'object'])){
-                                $new_data[$group]['endpoints'][$url]['ResponseExample'][$key]['value'] = 
-                                    str_replace("'", '"', $new_data[$group]['endpoints'][$url]['ResponseExample'][$key]['value']);
+
+                        if (array_key_exists('ResponseExample', $new_data[$group]['endpoints'][$url])) {
+                            foreach($new_data[$group]['endpoints'][$url]['ResponseExample'] as $key => $item) {
+                                if (in_array($item['datatype'], ['json', 'array', 'object'])){
+                                    $new_data[$group]['endpoints'][$url]['ResponseExample'][$key]['value'] = 
+                                        str_replace("'", '"', $new_data[$group]['endpoints'][$url]['ResponseExample'][$key]['value']);
+                                }
+                                
                             }
-                            
                         }
 
-                        foreach($new_data[$group]['endpoints'][$url]['ResponseErrorExample'] as $key => $item) {
-                            if (in_array($item['datatype'], ['json', 'array', 'object'])){
-                                $new_data[$group]['endpoints'][$url]['ResponseErrorExample'][$key]['value'] = 
-                                    str_replace("'", '"', $new_data[$group]['endpoints'][$url]['ResponseErrorExample'][$key]['value']);
+                        if (array_key_exists('ResponseErrorExample', $new_data[$group]['endpoints'][$url])) {
+                            foreach($new_data[$group]['endpoints'][$url]['ResponseErrorExample'] as $key => $item) {
+                                if (in_array($item['datatype'], ['json', 'array', 'object'])){
+                                    $new_data[$group]['endpoints'][$url]['ResponseErrorExample'][$key]['value'] = 
+                                        str_replace("'", '"', $new_data[$group]['endpoints'][$url]['ResponseErrorExample'][$key]['value']);
+                                }
+                                
                             }
-                            
                         }
+
                         
                     }
                 }
