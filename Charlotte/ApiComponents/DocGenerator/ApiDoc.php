@@ -29,6 +29,22 @@ class ApiDoc Extends Doc {
                             $new_data[$group]['endpoints'][$url] = $method['comment'];
                             $new_data[$group]['endpoints'][$url]['RequestUrl'] = $url;
                         }
+
+                        foreach($new_data[$group]['endpoints'][$url]['RequestExample'] as $key => $item) {
+                            if (in_array($item['datatype'], ['json', 'array', 'object'])){
+                                $new_data[$group]['endpoints'][$url]['RequestExample'][$key]['value'] = 
+                                    str_replace("'", '"', $new_data[$group]['endpoints'][$url]['RequestExample'][$key]['value']);
+                            }
+                            
+                        }
+
+                        foreach($new_data[$group]['endpoints'][$url]['ResponseExample'] as $key => $item) {
+                            if (in_array($item['datatype'], ['json', 'array', 'object'])){
+                                $new_data[$group]['endpoints'][$url]['ResponseExample'][$key]['value'] = 
+                                    str_replace("'", '"', $new_data[$group]['endpoints'][$url]['RequestExample'][$key]['value']);
+                            }
+                            
+                        }
                         
                     }
                 }
