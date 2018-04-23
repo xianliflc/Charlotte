@@ -32,7 +32,8 @@ abstract class Doc {
 			"request" => "RequestExample",
 			"success" => "ResponseErrorExample",
             "exception" => "ResponseException",
-            "header" => "RequestHeader"
+            "header" => "RequestHeader",
+            "name" => "RequestName"
 	];
 
     public function __construct(Config $config = null)

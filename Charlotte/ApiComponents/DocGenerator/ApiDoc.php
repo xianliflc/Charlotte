@@ -24,6 +24,11 @@ class ApiDoc Extends Doc {
             foreach($group_data as $class) {
                 $new_data[$group]['group'] = array_merge($new_data[$group]['group'], $class['class']['comment']['group']);
                 foreach($class['methods'] as $method) {
+
+                    if (!array_key_exists('RequestUrl', $method['comment']) && array_key_exists('RequestName', $method['comment']) ) {
+                        $method['comment']['RequestUrl'] = $method['comment']['RequestName'];
+                    }
+                    
                     if (array_key_exists('RequestUrl', $method['comment'])) {
                         foreach($method['comment']['RequestUrl'] as $url) {
                             $new_data[$group]['endpoints'][$url] = $method['comment'];
