@@ -331,7 +331,7 @@ abstract class Doc {
 			if(isset($annotation['class']['comment']['group'])){
 				$this->data[$annotation['class']['comment']['group'][0]['name']][$class] = array(
 					'class' => $annotation['class'],
-					'methods' => $annotation['methods'],
+					'methods' => array_key_exists('methods', $annotation )? $annotation['methods'] : [],
 				);
 			}
 		}
