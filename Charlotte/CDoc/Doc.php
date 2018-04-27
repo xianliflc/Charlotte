@@ -31,7 +31,9 @@ abstract class Doc {
 			"notice" => "RequestNotice",
 			"request" => "RequestExample",
 			"success" => "ResponseErrorExample",
-			"exception" => "ResponseException"
+            "exception" => "ResponseException",
+            "header" => "RequestHeader",
+            "name" => "RequestName"
 	];
 
     public function __construct(Config $config = null)
@@ -168,7 +170,7 @@ abstract class Doc {
                 $this->getResources($dir);
             } else {
                 $file_info = pathinfo($dir);
-                if (in_array($file_info['extension'], $this->allowedFileExtensions)) {
+                if (array_key_exists('extension', $file_info) && in_array($file_info['extension'], $this->allowedFileExtensions)) {
                     $this->files[] = $dir;
                 }
             }
@@ -179,21 +181,64 @@ abstract class Doc {
      * @throws \Exception
      */
     protected function getAnnotations() {
-        foreach($this->files as $file) {
-            try{
-                $info = pathinfo($file);
-                $dir = str_replace($this->config['settings']['resource_path'], 
-                                    $this->config['settings']['package_prefix'], 
-                                    $info['dirname'] 
-            );
-                $classpath = str_replace('/', '\\', $dir . '/'. $info['filename']);
-                $this->getFileAnnotation($classpath);
-            } catch(\Exception $e) {
-                throw new \Exception('', 502);
+        $outside_resource = false;
+        if (isset($this->config['settings']['outside']) && $this->config['settings']['outside'] === true) {
+            $outside_resource = true;
+        }
+        
+        try{
+            foreach($this->files as $file) {
+                if (!$outside_resource) {
+                    $info = pathinfo($file);
+                    $dir = str_replace($this->config['settings']['resource_path'], 
+                                        $this->config['settings']['package_prefix'], 
+                                        $info['dirname'] 
+                    );
+                    $classpath = str_replace('/', '\\', $dir . '/'. $info['filename']);
+                    $this->getFileAnnotation($classpath);
+                } else {
+
+                    $this->getExternalFileAnnotation($file);
+                }
+
             }
+        } catch(\Exception $e) {
+            throw new \Exception('', 502);
+        }
             
 
-        }
+        
+    }
+
+    /**
+     */
+    protected function getExternalFileAnnotation($file) {
+        $info = pathinfo($file);
+		if (!isset($this->annotations[$file])) {
+            $file_content = file_get_contents($file);
+            preg_match_all('/\/\*\*([\s\S]*?)\*\/[\s\S]*class[\s\S]*\{/', $file_content, $matches);
+            preg_match_all('/\/\*\*([\s\S]*?)\*\//', $file_content, $methods_matches);
+            $blocks = array();
+
+            if (isset($matches[1])) {
+                $class_annotation = implode("\n", $matches[1]);
+                $class_annotation = str_replace('* ', '', $class_annotation);
+                $this->annotations[$file]['class'] = 
+                array (
+                    'comment' => self::parseAnnotations($class_annotation)
+                 );;
+            }
+            
+            if (isset($methods_matches[1]) && count($methods_matches[1]) > 1) {
+                for($index = 1; $index < count($methods_matches[1]); $index++) {
+                    $this->annotations[$file]['methods'][] = [
+                        'comment' => self::parseAnnotations($methods_matches[1][$index]),
+                        'fileName'	=> $info['filename']
+                    ];
+                }
+
+            }
+		}
     }
 
     /**
@@ -286,7 +331,7 @@ abstract class Doc {
 			if(isset($annotation['class']['comment']['group'])){
 				$this->data[$annotation['class']['comment']['group'][0]['name']][$class] = array(
 					'class' => $annotation['class'],
-					'methods' => $annotation['methods'],
+					'methods' => array_key_exists('methods', $annotation )? $annotation['methods'] : [],
 				);
 			}
 		}

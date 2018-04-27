@@ -24,7 +24,7 @@ class Core
     private $logger;
     private $service_container;
 
-    const version = '0.0.9 - alpha';
+    const version = '0.0.10 - alpha';
 
     private function __construct()
     {
