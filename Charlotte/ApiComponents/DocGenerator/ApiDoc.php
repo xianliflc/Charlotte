@@ -6,6 +6,8 @@ use Charlotte\CDoc\Doc;
 
 class ApiDoc Extends Doc {
 
+    private $debug;
+
     public function render($dependencies, $template) {
         // TODO: Doc: render doc in frontend with templates
     }
@@ -14,12 +16,17 @@ class ApiDoc Extends Doc {
         // TODO: export doc to with certain format and store in designed folder
     }
 
+    /**
+     *
+     * @inheritDoc
+     * @return void
+     */
     public function refine() {
         parent::refine();
         $new_data = array();
         foreach ($this->data as $group => $group_data) {
 
-            $new_data[$group] = array('group'=>array(), 'endpoints' => array());
+            $new_data[$group] = array('group'=>array(), 'endpoints' => array(), 'debug' => array());
 
             foreach($group_data as $class) {
                 $new_data[$group]['group'] = array_merge($new_data[$group]['group'], $class['class']['comment']['group']);
@@ -36,6 +43,9 @@ class ApiDoc Extends Doc {
                         foreach($method['comment']['RequestUrl'] as $url) {
                             $new_data[$group]['endpoints'][$url] = $method['comment'];
                             $new_data[$group]['endpoints'][$url]['RequestUrl'] = $url;
+                            if (array_key_exists('nameSpace', $class['class'])) {
+                                $new_data[$group]['endpoints'][$url]['nameSpace'] = $class['class']['nameSpace'];
+                            }
                         }
 
                         if (array_key_exists('RequestExample', $new_data[$group]['endpoints'][$url])) {
@@ -51,7 +61,6 @@ class ApiDoc Extends Doc {
                                 
                             }
                         }
-
 
                         if (array_key_exists('ResponseExample', $new_data[$group]['endpoints'][$url])) {
                             foreach($new_data[$group]['endpoints'][$url]['ResponseExample'] as $key => $item) {
@@ -81,7 +90,6 @@ class ApiDoc Extends Doc {
                             }
                         }
 
-                        
                     }
                 }
             }
@@ -90,6 +98,12 @@ class ApiDoc Extends Doc {
         $this->data = $new_data;
     }
 
+    /**
+     * Format XML to HTML friendly string
+     *
+     * @param string $xml
+     * @return void
+     */
     private function formatXMLforHTML(string $xml) {
         $xml = addslashes(htmlentities($xml));
         $xml = preg_replace('/(&gt;)([^\&lt;]*)(&lt;[^\/])/', '$1$2<br>$3', $xml);

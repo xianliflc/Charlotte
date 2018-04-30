@@ -153,14 +153,19 @@ abstract class Doc {
     }
 
     /**
+     * Only reading codes from allowed extensions
      *
+     * @return void
      */
     protected function getAllowedFileExtensions() {
         $this->allowedFileExtensions = explode('|', $this->config['settings']['allowed_files']);
     }
 
     /**
-     * @param $path
+     * Get code files from path
+     *
+     * @param [string] $path
+     * @return void
      */
     protected function getResources($path) {
         $dirs = glob($path .'/*');
@@ -177,8 +182,11 @@ abstract class Doc {
         }
     }
 
+
     /**
+     * Main function for getting comment blocks
      * @throws \Exception
+     * @return void
      */
     protected function getAnnotations() {
         $outside_resource = false;
@@ -197,7 +205,6 @@ abstract class Doc {
                     $classpath = str_replace('/', '\\', $dir . '/'. $info['filename']);
                     $this->getFileAnnotation($classpath);
                 } else {
-
                     $this->getExternalFileAnnotation($file);
                 }
 
@@ -205,12 +212,13 @@ abstract class Doc {
         } catch(\Exception $e) {
             throw new \Exception('', 502);
         }
-            
-
-        
     }
 
     /**
+     * Get comments form file located out of Charlotte APP
+     *
+     * @param [string] $file
+     * @return void
      */
     protected function getExternalFileAnnotation($file) {
         $info = pathinfo($file);
@@ -220,15 +228,20 @@ abstract class Doc {
             preg_match_all('/\/\*\*([\s\S]*?)\*\//', $file_content, $methods_matches);
             $blocks = array();
 
+            // if the file has class documentation
             if (isset($matches[1])) {
                 $class_annotation = implode("\n", $matches[1]);
                 $class_annotation = str_replace('* ', '', $class_annotation);
+                
+                preg_match('/\bnamespace[\s]*([\S]*);/', $file_content, $namespace);
                 $this->annotations[$file]['class'] = 
                 array (
-                    'comment' => self::parseAnnotations($class_annotation)
+                    'comment' => self::parseAnnotations($class_annotation),
+                    'nameSpace' => ($namespace && isset($namespace[1])) ? $namespace[1] : false
                  );;
             }
             
+            // if the file has methods comment blocks
             if (isset($methods_matches[1]) && count($methods_matches[1]) > 1) {
                 for($index = 1; $index < count($methods_matches[1]); $index++) {
                     $this->annotations[$file]['methods'][] = [
@@ -262,7 +275,9 @@ abstract class Doc {
 		return array (
 			         'comment' => self::parseAnnotations($class->getDocComment()),
 			         'parentClass' => $class->getParentClass()->name,
-			         'fileName'	=> $class->getFileName(),
+                     'fileName'	=> $class->getFileName(),
+                     'nameSpace' => $class->inNameSpace() ? $class->getNamespaceName() : false
+                     
                   );
     }
 
@@ -323,7 +338,9 @@ abstract class Doc {
     }
 
     /**
+     * Reformat comments
      *
+     * @return void
      */
     protected function refine()
 	{
